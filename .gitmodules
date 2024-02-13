@@ -1,0 +1,8 @@
+[submodule "zasm"]
+	path = zasm
+	url = https://github.com/zyantific/zasm.git
+	branch = master
+[submodule "3rdparty/zasm"]
+	path = 3rdparty/zasm
+	url = https://github.com/zyantific/zasm
+	branch = master
