@@ -5,6 +5,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include "ImageSection.h"
 #include "Windows.h"
+#include "ImportedModule.h"
+#include "ExportedModule.h"
 
 
 /**
@@ -43,6 +45,8 @@ private:
 
 	std::vector<uint8_t> m_data;
 	std::vector<ImageSection> m_sections;
+	std::vector<ImportedModule> m_imports;
+	std::vector<ExportedModule> m_exports;
 
 	IMAGE_DOS_HEADER m_dosHeader;
 	IMAGE_NT_HEADERS m_ntHeaders;

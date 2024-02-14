@@ -103,12 +103,56 @@ void ExecutableFile::parseSections()
 
 void ExecutableFile::parseImports()
 {
-	
+	const auto importDirectory = m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	if (importDirectory.Size == 0)
+	{
+		return;
+	}
+
+	const auto importSection = getSection(importDirectory.VirtualAddress);
+	if (importSection == nullptr)
+	{
+		throw std::runtime_error("Invalid import section");
+	}
+
+	auto importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(m_data.data() + importSection->vaToFo(
+		importDirectory.VirtualAddress));
+
+	while (importDescriptor->Name != 0)
+	{
+		auto moduleName = reinterpret_cast<char*>(m_data.data() + importSection->vaToFo(importDescriptor->Name));
+		m_imports.emplace_back(moduleName);
+
+		const auto thunkOffset = importDescriptor->OriginalFirstThunk != 0
+			                         ? importDescriptor->OriginalFirstThunk
+			                         : importDescriptor->FirstThunk;
+
+		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(thunkOffset));
+		while (thunk->u1.AddressOfData != 0)
+		{
+			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+			{
+				// TODO: Handle ordinal imports
+
+				++thunk;
+				continue;
+			}
+
+			const auto importName = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(m_data.data() + importSection->vaToFo(
+				static_cast<uint32_t>(thunk->u1.AddressOfData)));
+			m_imports.back().addFunction(importName->Name, true);
+
+			++thunk;
+		}
+
+		++importDescriptor;
+	}
 }
 
 void ExecutableFile::parseExports()
 {
 	
+}
 
 ImageSection* ExecutableFile::getSection(std::string_view name)
 {
