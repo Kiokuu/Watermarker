@@ -18,6 +18,22 @@ public:
 		m_data(data)
 	{}
 
+	std::string_view getName() const { return m_name; }
+	uint32_t getVirtualAddress() const { return m_virtualAddress; }
+	uint32_t getVirtualSize() const { return m_virtualSize; }
+	uint32_t getRawAddress() const { return m_rawAddress; }
+	uint32_t getRawSize() const { return m_rawSize; }
+	uint32_t getCharacteristics() const { return m_characteristics; }
+	const std::span<uint8_t>& getData() const { return m_data; }
+
+	void setVirtualAddress(uint32_t virtualAddress) { m_virtualAddress = virtualAddress; }
+	void setVirtualSize(uint32_t virtualSize) { m_virtualSize = virtualSize; }
+	void setRawAddress(uint32_t rawAddress) { m_rawAddress = rawAddress; }
+	void setRawSize(uint32_t rawSize) { m_rawSize = rawSize; }
+	void setCharacteristics(uint32_t characteristics) { m_characteristics = characteristics; }
+	void setData(const std::span<uint8_t>& data) { m_data = data; }
+
+
 private:
 	std::string m_name;
 	uint32_t m_virtualAddress;
