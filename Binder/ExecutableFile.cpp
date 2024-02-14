@@ -82,14 +82,22 @@ void ExecutableFile::parseNtHeaders()
 
 void ExecutableFile::parseSections()
 {
+	m_sections.resize(m_ntHeaders.FileHeader.NumberOfSections);
+
 	for (size_t i = 0; i < m_ntHeaders.FileHeader.NumberOfSections; i++)
 	{
 		const auto section = reinterpret_cast<IMAGE_SECTION_HEADER*>(m_data.data() + m_dosHeader.e_lfanew + sizeof(
 			IMAGE_NT_HEADERS) + i * sizeof(IMAGE_SECTION_HEADER));
 
-		std::cout << "Section: " << section->Name << "\n";
-		std::cout << "Virtual Address: " << section->VirtualAddress << "\n";
-		std::cout << "Virtual Size: " << section->Misc.VirtualSize << "\n";
+		m_sections[i] = ImageSection(
+			std::string_view(reinterpret_cast<const char*>(section->Name), sizeof(section->Name)),
+			section->VirtualAddress,
+			section->Misc.VirtualSize,
+			section->PointerToRawData,
+			section->SizeOfRawData,
+			section->Characteristics,
+			std::span(m_data.data() + section->PointerToRawData, section->SizeOfRawData)
+		);
 	}
 }
 
