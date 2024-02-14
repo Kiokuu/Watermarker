@@ -1,5 +1,6 @@
 #pragma once
 #include <span>
+#include <stdexcept>
 #include <string_view>
 
 class ImageSection
@@ -33,6 +34,23 @@ public:
 	void setCharacteristics(uint32_t characteristics) { m_characteristics = characteristics; }
 	void setData(const std::span<uint8_t>& data) { m_data = data; }
 
+	uint32_t vaToFo(uint32_t va) const
+	{
+		if (va < m_virtualAddress || va >= m_virtualAddress + m_virtualSize)
+		{
+			throw std::runtime_error("Invalid virtual address");
+		}
+		return va - m_virtualAddress + m_rawAddress;
+	}
+
+	uint32_t foToVa(uint32_t fo) const
+	{
+		if (fo < m_rawAddress || fo >= m_rawAddress + m_rawSize)
+		{
+			throw std::runtime_error("Invalid file offset");
+		}
+		return fo - m_rawAddress + m_virtualAddress;
+	}
 
 private:
 	std::string m_name;
