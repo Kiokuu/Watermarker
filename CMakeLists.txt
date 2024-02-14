@@ -11,10 +11,9 @@ endif()
 
 
 project ("Watermarker")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 include(cmake/git_submodules.cmake)
 
-# Set the runtime output directories.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 # Include sub-projects.
 add_subdirectory("Binder")
