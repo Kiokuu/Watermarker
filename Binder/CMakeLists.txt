@@ -2,6 +2,8 @@
 # project specific logic here.
 #
 
+
+
 include(FetchContent)
 
 FetchContent_Declare(zasm
@@ -11,9 +13,8 @@ FetchContent_Declare(zasm
 
 FetchContent_MakeAvailable(zasm)
 
-
 # Add source to this project's executable.
-add_executable (Binder "Binder.cpp" "Binder.h")
+add_executable (Binder "Binder.cpp" "Binder.h" "main.cpp" "ExecutableFile.h" "ExecutableFile.cpp")
 
 target_include_directories(Binder PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(Binder PRIVATE zasm)

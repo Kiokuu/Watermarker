@@ -3,7 +3,3 @@
 
 #include "Binder.h"
 
-int main()
-{
-	return 0;
-}
