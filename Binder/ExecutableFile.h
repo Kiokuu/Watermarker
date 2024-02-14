@@ -23,6 +23,9 @@ public:
 	~ExecutableFile() = default;
 	void save(std::string_view savePath);
 
+	const std::vector<uint8_t>& getData() const { return m_data; }
+	const std::vector<ImageSection>& getSections() const { return m_sections; }
+
 private:
 	/**
 	 * Parsing
@@ -33,6 +36,10 @@ private:
 	void parseSections();
 	void parseImports();
 	void parseExports();
+
+
+	ImageSection* getSection(std::string_view name);
+	ImageSection* getSection(uint32_t virtualAddress);
 
 	std::vector<uint8_t> m_data;
 	std::vector<ImageSection> m_sections;
