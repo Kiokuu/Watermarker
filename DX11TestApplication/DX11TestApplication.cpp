@@ -2,8 +2,12 @@
 //
 
 #include "DX11TestApplication.h"
+#include <iostream>
 
 int main()
 {
+	std::cout << "Hi" << "\n";
+
+	std::cin.get();
 	return 0;
 }
