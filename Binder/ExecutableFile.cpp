@@ -1,6 +1,7 @@
 #include "ExecutableFile.h"
 #include <fstream>
 #include <iostream>
+#include <functional>
 #include "Utils.h"
 
 ExecutableFile::ExecutableFile(std::string_view executablePath)
@@ -30,8 +31,105 @@ ExecutableFile::ExecutableFile(std::string_view executablePath)
 
 void ExecutableFile::save(std::string_view savePath)
 {
-	
+	// Recalculate header size and image size.
+	uint32_t sizeOfHeaders = m_dosHeader.e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + m_ntHeaders.FileHeader.
+		SizeOfOptionalHeader + (sizeof(IMAGE_SECTION_HEADER) * m_sections.size());
 
+	sizeOfHeaders = Binder::alignTo(sizeOfHeaders, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
+
+	const auto max_virtual_address = std::ranges::max_element(m_sections,
+	  [](const ImageSection& a, const ImageSection& b)
+	  {
+	      return a.getVirtualAddress() < b.getVirtualAddress();
+	  });
+
+	uint32_t sizeOfImage = max_virtual_address->getVirtualAddress() + max_virtual_address->getVirtualSize();
+	sizeOfImage = Binder::alignTo(sizeOfImage, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.SectionAlignment));
+
+	m_ntHeaders.OptionalHeader.SizeOfHeaders = sizeOfHeaders;
+	m_ntHeaders.OptionalHeader.SizeOfImage = sizeOfImage;
+	m_ntHeaders.FileHeader.NumberOfSections = m_sections.size();
+
+
+	HANDLE saveFile = CreateFileA(savePath.data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (saveFile == INVALID_HANDLE_VALUE)
+	{
+		throw std::runtime_error("Failed to create save file");
+	}
+
+	DWORD totalBytesWritten = 0;
+	DWORD bytesWritten = 0;
+
+	
+	// Write dos header
+	WriteFile(saveFile, &m_dosHeader, sizeof(m_dosHeader), &bytesWritten, nullptr);
+	totalBytesWritten += bytesWritten;
+
+	if (bytesWritten < m_dosHeader.e_lfanew)
+	{
+		std::vector<uint8_t> padding(m_dosHeader.e_lfanew - bytesWritten);
+		std::fill(padding.begin(), padding.end(), 0);
+		WriteFile(saveFile, padding.data(), padding.size(), &bytesWritten, nullptr);
+		totalBytesWritten += bytesWritten;
+	}
+
+	// Write nt headers
+	WriteFile(saveFile, &m_ntHeaders, sizeof(m_ntHeaders), &bytesWritten, nullptr);
+	totalBytesWritten += bytesWritten;
+
+	// Write section headers
+	for (const auto& section : m_sections)
+	{
+		IMAGE_SECTION_HEADER sectionHeader = {};
+		sectionHeader.VirtualAddress = section.getVirtualAddress();
+		sectionHeader.Misc.VirtualSize = section.getVirtualSize();
+		sectionHeader.PointerToRawData = section.getRawAddress();
+		sectionHeader.SizeOfRawData = section.getRawSize();
+		sectionHeader.Characteristics = section.getCharacteristics();
+
+		std::cout << "Writing section: " << section.getName() << "\n";
+		std::cout << "Name Size: " << section.getName().size() << "\n";
+
+		// For some reason name includes a null terminator and garbage data.
+		memcpy(sectionHeader.Name, section.getName().data(),
+		       std::min<size_t>(section.getName().size(), sizeof(sectionHeader.Name)));
+
+
+		std::cout << "Virtual Address: " << section.getVirtualAddress() << "\n";
+		std::cout << "Virtual Size: " << section.getVirtualSize() << "\n";
+
+		WriteFile(saveFile, &sectionHeader, sizeof(sectionHeader), &bytesWritten, nullptr);
+		totalBytesWritten += bytesWritten;
+	}
+
+	// Pad until file alignment
+	const uint32_t nearestFA = Binder::alignTo(totalBytesWritten, m_ntHeaders.OptionalHeader.FileAlignment);
+	const uint32_t distanceFA = nearestFA - totalBytesWritten;
+
+	if (distanceFA > 0)
+	{
+		std::vector<uint8_t> padding(distanceFA);
+		std::fill(padding.begin(), padding.end(), 0);
+		WriteFile(saveFile, padding.data(), padding.size(), &bytesWritten, nullptr);
+		totalBytesWritten += bytesWritten;
+	}
+
+	// Write section data
+	for (const auto& section : m_sections)
+	{
+		WriteFile(saveFile, section.getData().data(), section.getData().size(), &bytesWritten, nullptr);
+		totalBytesWritten += bytesWritten;
+
+		if (bytesWritten < section.getRawSize())
+		{
+			std::vector<uint8_t> padding(section.getRawSize() - bytesWritten);
+			std::fill(padding.begin(), padding.end(), 0);
+			WriteFile(saveFile, padding.data(), padding.size(), &bytesWritten, nullptr);
+			totalBytesWritten += bytesWritten;
+		}
+	}
+
+	CloseHandle(saveFile);
 }
 
 bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics,

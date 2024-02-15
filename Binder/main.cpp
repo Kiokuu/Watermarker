@@ -18,5 +18,10 @@ int main(int argc, char *argv[]) {
 
 
 	ExecutableFile file(argv[1]);
+	// Save the modified executable file to a new file
+	file.save("modified.exe");
+
+
+	std::cin.get();
 	return 0;
 }
