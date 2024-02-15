@@ -1,6 +1,7 @@
 #include "ExecutableFile.h"
 #include <fstream>
 #include <iostream>
+#include "Utils.h"
 
 ExecutableFile::ExecutableFile(std::string_view executablePath)
 {
@@ -29,6 +30,26 @@ ExecutableFile::ExecutableFile(std::string_view executablePath)
 
 void ExecutableFile::save(std::string_view savePath)
 {
+	
+
+}
+
+bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics,
+	ImageSection** outSection)
+{
+	const AddressPair addressPair = getNextAddress();
+	ImageSection* section = nullptr;
+
+	if (!_createSection(name, addressPair.virtualAddress, virtualSize, addressPair.rawAddress,
+	                    Binder::alignTo(virtualSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment)),
+	                    characteristics, &section))
+	{
+		return false;
+	}
+
+	*outSection = section;
+	return true;
+}
 
 AddressPair ExecutableFile::getNextAddress() const
 {
@@ -63,6 +84,7 @@ AddressPair ExecutableFile::getFirstSectionAddress() const
 		Binder::alignTo(rawAddress, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment))
 	};
 }
+
 
 void ExecutableFile::parse()
 {
@@ -165,6 +187,7 @@ void ExecutableFile::parseImports()
 			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
 				// TODO: Handle ordinal imports
+				
 
 				++thunk;
 				continue;
@@ -209,4 +232,42 @@ ImageSection* ExecutableFile::getSection(uint32_t virtualAddress)
 		}
 	}
 	return nullptr;
+}
+
+bool ExecutableFile::_createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, ImageSection** outSection)
+{
+	if (getSection(virtualAddress) != nullptr)
+	{
+		// Section already exists
+		return false;
+	}
+
+	if (getSection(name) != nullptr)
+	{
+		// Section already exists
+		return false;
+	}
+
+	if (name.size() > 7)
+	{
+		// Name can only be 7 characters long
+		return false;
+	}
+
+	rawSize = Binder::alignTo(rawSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
+
+	m_ntHeaders.FileHeader.NumberOfSections++;
+
+	m_ntHeaders.OptionalHeader.SizeOfHeaders = Binder::alignTo(
+		m_ntHeaders.OptionalHeader.SizeOfHeaders + sizeof(IMAGE_SECTION_HEADER),
+		static_cast<uint64_t>(m_ntHeaders.OptionalHeader.FileAlignment)); // wrong?
+
+	m_ntHeaders.OptionalHeader.SizeOfImage = Binder::alignTo(
+		m_ntHeaders.OptionalHeader.SizeOfImage + virtualSize + sizeof(IMAGE_SECTION_HEADER),
+		static_cast<uint64_t>(m_ntHeaders.OptionalHeader.SectionAlignment));
+
+	*outSection = &m_sections.emplace_back(ImageSection{
+		name, virtualAddress, virtualSize, rawAddress, rawSize, characteristics, {}
+	});
+	return true;
 }
