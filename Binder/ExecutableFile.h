@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 #include <vector>
-
+#define NOMINMAX // http://www.suodenjoki.dk/us/archive/2010/min-max.htm 
 #define WIN32_LEAN_AND_MEAN
 #include "ImageSection.h"
 #include "Windows.h"
