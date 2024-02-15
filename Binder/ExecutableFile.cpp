@@ -149,6 +149,23 @@ bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, 
 	return true;
 }
 
+void ExecutableFile::addImport(std::string_view moduleName, std::string_view functionName)
+{
+	for (auto& importedModule : m_imports)
+	{
+		if (_stricmp(importedModule.getName().data(), moduleName.data()) == 0)
+		{
+			m_rewriteImportsOnSave = true;
+			importedModule.addFunction(functionName, false); // Handles checking for duplicates
+			return;
+		}
+	}
+
+	m_rewriteImportsOnSave = true;
+	auto& module = m_imports.emplace_back(moduleName);
+	module.addFunction(functionName, false);
+}
+
 AddressPair ExecutableFile::getNextAddress() const
 {
 	uint32_t virtualAddress = 0;
