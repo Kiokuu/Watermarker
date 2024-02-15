@@ -4,7 +4,7 @@
 #include <functional>
 #include "Utils.h"
 
-ExecutableFile::ExecutableFile(std::string_view executablePath)
+ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImportsOnSave(false)
 {
 	// Open the executable file
 	std::ifstream file(executablePath.data(), std::ios::binary);
@@ -31,6 +31,9 @@ ExecutableFile::ExecutableFile(std::string_view executablePath)
 
 void ExecutableFile::save(std::string_view savePath)
 {
+	if(m_rewriteImportsOnSave)
+		rewriteImports();
+
 	// Recalculate header size and image size.
 	uint32_t sizeOfHeaders = m_dosHeader.e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + m_ntHeaders.FileHeader.
 		SizeOfOptionalHeader + (sizeof(IMAGE_SECTION_HEADER) * m_sections.size());
@@ -149,7 +152,7 @@ bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, 
 	return true;
 }
 
-void ExecutableFile::addImport(std::string_view moduleName, std::string_view functionName)
+void ExecutableFile::addImport(std::string moduleName, std::string functionName)
 {
 	for (auto& importedModule : m_imports)
 	{
@@ -164,6 +167,318 @@ void ExecutableFile::addImport(std::string_view moduleName, std::string_view fun
 	m_rewriteImportsOnSave = true;
 	auto& module = m_imports.emplace_back(moduleName);
 	module.addFunction(functionName, false);
+}
+
+void ExecutableFile::rewriteImports()
+{
+	m_rewriteImportsOnSave = false;
+
+	std::cout << "Rewriting imports" << "\n";
+
+	uint32_t iatSize = 0;
+
+	for (const auto& module : m_imports)
+	{
+		iatSize += sizeof(IMAGE_THUNK_DATA) + sizeof(IMAGE_THUNK_DATA) * static_cast<uint32_t>(module.getFunctions().
+			size());
+	}
+	iatSize = Binder::alignTo(iatSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
+
+	// IDT Size Prediction
+	uint32_t idtSize = sizeof(IMAGE_IMPORT_DESCRIPTOR) + (sizeof(IMAGE_IMPORT_DESCRIPTOR) * static_cast<uint32_t>(
+		m_imports.size()));
+	uint32_t iltSize = iatSize;
+
+	uint32_t hintTableSize = 0;
+	for (const auto& module : m_imports)
+	{
+		for (const auto& function : module.getFunctions())
+		{
+			hintTableSize += sizeof(WORD); // Hint
+			hintTableSize += static_cast<uint32_t>(function.getName().size() + 1); // Name
+
+			if ((function.getName().size() + 1) % 2 != 0)
+			{
+				++hintTableSize;
+			}
+		}
+		hintTableSize += static_cast<uint32_t>(module.getName().size() + 1); // DllName
+	}
+	hintTableSize = Binder::alignTo(hintTableSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
+
+
+	const uint32_t importDataSize = iatSize + idtSize + iltSize + hintTableSize;
+
+	// Creation of new import section
+	const AddressPair importAddressPair = getNextAddress();
+	ImageSection* newImportSection = nullptr;
+
+	if (!_createSection(".newimp", importAddressPair.virtualAddress, importDataSize, importAddressPair.rawAddress,
+	                    importDataSize, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_CNT_INITIALIZED_DATA,
+	                    &newImportSection))
+	{
+		throw std::runtime_error("Failed to create new import section");
+	}
+
+	// Define the trampoline section, fill later
+	constexpr size_t trampolineCodeSize = 12;
+	size_t trampolinesize = 0;
+
+	for (const auto& module : m_imports)
+	{
+		for (const auto& function : module.getFunctions())
+		{
+			trampolinesize += trampolineCodeSize;
+		}
+	}
+
+	const AddressPair trampolineAddressPair = getNextAddress();
+
+	ImageSection* trampolineSection = nullptr;
+	if (!_createSection(".itram", trampolineAddressPair.virtualAddress, trampolinesize,
+	                    trampolineAddressPair.rawAddress, trampolinesize,
+	                    IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ | IMAGE_SCN_CNT_INITIALIZED_DATA |
+	                    IMAGE_SCN_CNT_CODE, &trampolineSection))
+	{
+		throw std::runtime_error("Failed to create trampoline section");
+	}
+
+
+	m_newImportData.resize(importDataSize);
+
+	std::span iatData(m_newImportData.data(), iatSize);
+	std::span idtData(m_newImportData.data() + iatSize, idtSize);
+	std::span iltData(m_newImportData.data() + iatSize + idtSize, iltSize);
+	std::span hintTableData(m_newImportData.data() + iatSize + idtSize + iltSize, hintTableSize);
+
+	uint32_t moduleCount = 0;
+	uint32_t importCount = 0;
+	uint32_t hintNameTableOffset = 0;
+
+	for (const auto& module : m_imports)
+	{
+		for (const auto& function : module.getFunctions())
+		{
+			IMAGE_THUNK_DATA thunkData = {};
+			//thunkData.u1.AddressOfData = importAddressPair.virtualAddress + (iatSize + idtSize + iltSize + hintNameTableOffset);
+
+			if(!function.getIsOrdinal())
+			{
+				thunkData.u1.AddressOfData = importAddressPair.virtualAddress + iatSize + idtSize + iltSize +
+				hintNameTableOffset;
+
+				memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+				memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+
+				m_addressMap[std::string(module.getName()) + "." + std::string(function.getName())] = importAddressPair.
+					virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
+
+
+				uint16_t hint = 0;
+				memcpy(hintTableData.data() + hintNameTableOffset, &hint, sizeof(hint));
+				hintNameTableOffset += sizeof(hint);
+
+				memcpy(hintTableData.data() + hintNameTableOffset, function.getName().data(), function.getName().size());
+				hintNameTableOffset += function.getName().size() + 1; // null terminator
+
+				// align on even boundary
+				// if name length + 1 is odd, add 1
+				if ((function.getName().size() + 1) % 2 != 0)
+				{
+					++hintNameTableOffset;
+				}
+			}
+			else
+			{
+				thunkData.u1.Ordinal = function.getOrdinal();
+				memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+				memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+
+				m_addressMap[std::string(module.getName()) + "." + std::to_string(function.getOrdinal())] = importAddressPair.
+					virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
+			}
+
+			//hintnametable?
+
+			++importCount;
+		}
+
+		IMAGE_THUNK_DATA nullThunkData = {0};
+		memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
+		memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
+		++importCount;
+
+		IMAGE_IMPORT_DESCRIPTOR importDescriptor = {};
+
+		importDescriptor.Name = importAddressPair.virtualAddress + (iatSize + idtSize + iltSize + hintNameTableOffset);
+
+		importDescriptor.OriginalFirstThunk = importAddressPair.virtualAddress + iatSize + idtSize + ((importCount -
+			static_cast<uint32_t>(module.getFunctions().size())) * sizeof(IMAGE_THUNK_DATA)) - sizeof(IMAGE_THUNK_DATA);
+		//importDescriptor.OriginalFirstThunk = importAddressPair.virtualAddress + ((importCount - static_cast<uint32_t>(module.getFunctions().size())) * sizeof(IMAGE_THUNK_DATA)) - sizeof(IMAGE_THUNK_DATA);
+
+		//importDescriptor.FirstThunk = importDescriptor.OriginalFirstThunk;
+		importDescriptor.FirstThunk = importAddressPair.virtualAddress + ((importCount - static_cast<uint32_t>(module.
+			getFunctions().size())) * sizeof(IMAGE_THUNK_DATA)) - sizeof(IMAGE_THUNK_DATA);
+
+		memcpy(idtData.data() + moduleCount * sizeof(IMAGE_IMPORT_DESCRIPTOR), &importDescriptor,
+		       sizeof(importDescriptor));
+
+		memcpy(hintTableData.data() + hintNameTableOffset, module.getName().data(), module.getName().size());
+		hintNameTableOffset += static_cast<uint32_t>(module.getName().size() + 1);
+
+		++moduleCount;
+	}
+
+	IMAGE_IMPORT_DESCRIPTOR nullImportDescriptor = {};
+	memcpy(idtData.data() + moduleCount * sizeof(IMAGE_IMPORT_DESCRIPTOR), &nullImportDescriptor,
+	       sizeof(nullImportDescriptor));
+	newImportSection->setData(m_newImportData);
+
+
+	auto importDirectory = m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	if (importDirectory.Size == 0)
+	{
+		return;
+	}
+
+	auto importSection = getSection(importDirectory.VirtualAddress);
+	auto importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(m_data.data() + importSection->vaToFo(
+		importDirectory.VirtualAddress));
+
+
+	uint32_t count = 0;
+
+	while (importDescriptor->Name != 0)
+	{
+		std::string moduleName = reinterpret_cast<char*>(m_data.data() + importSection->vaToFo(importDescriptor->Name));
+		uint32_t thunkOffset = importDescriptor->FirstThunk;
+
+		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(thunkOffset));
+
+		while (thunk->u1.AddressOfData != 0)
+		{
+			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+			{
+				if(m_addressMap.contains(moduleName + "." + std::to_string(thunk->u1.Ordinal)))
+				{
+
+
+					thunk->u1.Ordinal = m_ntHeaders.OptionalHeader.ImageBase + m_addressMap[moduleName + "." + std::to_string(thunk->u1.Ordinal)];
+
+				}
+
+				++count;
+				++thunk;
+				continue;
+			}
+
+			std::string importName = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(m_data.data() + importSection->vaToFo(
+				static_cast<uint32_t>(thunk->u1.AddressOfData)))->Name;
+
+			if (m_addressMap.contains(moduleName + "." + importName))
+			{
+				// If it's an original function, we need to jump to the trampoline
+				bool isOriginal = false;
+				for (const auto& module : m_imports)
+				{
+					for (const auto& function : module.getFunctions())
+					{
+						if (module.getName() == moduleName && function.getName() == importName)
+						{
+							isOriginal = function.getOriginal();
+							break;
+						}
+					}
+				}
+
+				if (isOriginal)
+				{
+					std::cout << "Function: " << moduleName << "." << importName << " Trampoline Address: " <<
+						trampolineAddressPair.virtualAddress + (trampolineCodeSize * count) << "\n";
+					thunk->u1.AddressOfData = m_ntHeaders.OptionalHeader.ImageBase + trampolineAddressPair.
+						virtualAddress + (count * trampolineCodeSize);
+				}
+				else
+				{
+					thunk->u1.AddressOfData = m_ntHeaders.OptionalHeader.ImageBase + m_addressMap[moduleName + "." +
+						importName];
+				}
+			}
+
+			++count;
+			++thunk;
+		}
+		++importDescriptor;
+	}
+
+	//importSection->setCharacteristics(importSection->getCharacteristics() | IMAGE_SCN_MEM_WRITE);
+
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = importAddressPair.
+		virtualAddress + iatSize;
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = idtSize;
+
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress = importAddressPair.
+		virtualAddress;
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size = iatSize;
+
+	m_ntHeaders.OptionalHeader.DllCharacteristics &= ~IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+
+
+	/*
+		Fill the trampolines
+		
+
+		{ 0x48, 0xA1 }); // mov rax, [&newIATEntryAddress]
+		{newIATEntryAddress}
+		{ 0xFF, 0xE0 }); // jmp rax
+	*/
+
+	std::cout << "Writing trampoline code" << "\n";
+
+	m_trampolineData.resize(trampolinesize);
+	std::span trampolineData(m_trampolineData.data(), trampolinesize);
+
+	constexpr uint8_t movInstruction[] = {0x48, 0xA1};
+	constexpr uint8_t jmpInstruction[] = {0xFF, 0xE0};
+
+	// Write trampoline code for each function using the address map. If its not a original function, use padding and pad to trampoline code size.
+	uint32_t trampolineOffset = 0;
+	for (const auto& module : m_imports)
+	{
+		for (const auto& function : module.getFunctions())
+		{
+			if (function.getOriginal())
+			{
+				std::cout << "Original function: " << module.getName() << "." << function.getName() << "\n";
+				std::cout << "Trampoline Address: " << trampolineAddressPair.virtualAddress + trampolineOffset <<
+					"\n";
+
+				uintptr_t newIATEntryAddress = m_ntHeaders.OptionalHeader.ImageBase + m_addressMap[
+					std::string(module.getName()) + "." + std::string(function.getName())];
+
+				memcpy(trampolineData.data() + trampolineOffset, movInstruction, sizeof(movInstruction));
+				memcpy(trampolineData.data() + trampolineOffset + sizeof(movInstruction), &newIATEntryAddress,
+				       sizeof(newIATEntryAddress));
+				memcpy(trampolineData.data() + trampolineOffset + sizeof(movInstruction) + sizeof(newIATEntryAddress),
+				       jmpInstruction, sizeof(jmpInstruction));
+
+				trampolineOffset += trampolineCodeSize;
+			}
+		}
+	}
+
+	trampolineSection->setData(m_trampolineData);
+	std::cout << "Done" << "\n";
+}
+
+uint32_t ExecutableFile::getImportAddress(std::string_view moduleName, std::string_view functionName)
+{
+	// Return the address map value if it exists, otherwise return 0
+	if (m_addressMap.contains(std::string(moduleName) + "." + std::string(functionName)))
+	{
+		return m_addressMap[std::string(moduleName) + "." + std::string(functionName)];
+	}
+	return 0;
 }
 
 AddressPair ExecutableFile::getNextAddress() const
@@ -302,8 +617,7 @@ void ExecutableFile::parseImports()
 			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
 				// TODO: Handle ordinal imports
-				
-
+				m_imports.back().addFunction(thunk->u1.Ordinal, true);
 				++thunk;
 				continue;
 			}

@@ -5,9 +5,6 @@
 #include "zasm/x86/assembler.hpp"
 
 int main(int argc, char *argv[]) {
-
-	// Print the arguments passed to the program.
-
 	for(int i = 0; i < argc; i++) {
 		std::cout << "arg[" << i << "]: " << argv[i] << "\n";
 	}
@@ -17,18 +14,20 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	// arg[0] is the program path, arg[1] is the first argument.
-	ExecutableFile file(argv[1]);
-
+	/*
 	zasm::Program program(zasm::MachineMode::AMD64);
 	zasm::x86::Assembler assembler(program);
 	zasm::Serializer serializer;
 
+	ExecutableFile file(argv[1]);
+	file.addImport("USER32.dll", "MessageBoxA");
+	file.rewriteImports();
+
 	ImageSection* newSection;
 	file.createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &newSection);
 
-
 	uint32_t OEP = file.getEntryPoint();
+	uint32_t messageAddress = file.getImportAddress("USER32.dll", "MessageBoxA");
 
 	// Assembly program to jump to the original entry point.
 	auto startLabel = program.createLabel("start");
@@ -45,10 +44,20 @@ int main(int argc, char *argv[]) {
 
 	// Set the entry point of the executable file
 	file.setEntryPoint(newSection->getVirtualAddress());
+	
+	*/
+
+	
+	ExecutableFile file(argv[1]);
+	ImageSection* newSection;
+	file.createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &newSection);
+
+	uint32_t OEP = file.getEntryPoint();
+
+	file.setEntryPoint(newSection->getVirtualAddress());
 
 	// Save the modified executable file to a new file
 	file.save("modified.exe");
-
 
 	std::cin.get();
 	return 0;
