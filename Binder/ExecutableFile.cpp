@@ -30,6 +30,38 @@ ExecutableFile::ExecutableFile(std::string_view executablePath)
 void ExecutableFile::save(std::string_view savePath)
 {
 
+AddressPair ExecutableFile::getNextAddress() const
+{
+	uint32_t virtualAddress = 0;
+	uint32_t rawAddress = 0;
+
+	for (const auto& section : m_sections)
+	{
+		virtualAddress = std::max<uint32_t>(virtualAddress, section.getVirtualAddress() + section.getVirtualSize());
+		rawAddress = std::max<uint32_t>(rawAddress, section.getRawAddress() + section.getRawSize());
+	}
+
+	return {
+		Binder::alignTo(virtualAddress, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.SectionAlignment)),
+		Binder::alignTo(rawAddress, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment))
+	};
+}
+
+AddressPair ExecutableFile::getFirstSectionAddress() const
+{
+	uint32_t virtualAddress = 0;
+	uint32_t rawAddress = 0;
+
+	for (const auto& section : m_sections)
+	{
+		virtualAddress = std::min<uint32_t>(virtualAddress, section.getVirtualAddress());
+		rawAddress = std::min<uint32_t>(rawAddress, section.getRawAddress());
+	}
+
+	return {
+		Binder::alignTo(virtualAddress, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.SectionAlignment)),
+		Binder::alignTo(rawAddress, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment))
+	};
 }
 
 void ExecutableFile::parse()

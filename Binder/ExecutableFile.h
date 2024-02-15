@@ -16,6 +16,12 @@
  */
 
 
+struct AddressPair
+{
+	uint32_t virtualAddress;
+	uint32_t rawAddress;
+};
+
 class ExecutableFile
 {
 public:
@@ -27,8 +33,12 @@ public:
 
 	const std::vector<uint8_t>& getData() const { return m_data; }
 	const std::vector<ImageSection>& getSections() const { return m_sections; }
+	const std::vector<ImportedModule>& getImports() const { return m_imports; }
 
 private:
+	AddressPair getNextAddress() const;
+	AddressPair getFirstSectionAddress() const;
+
 	/**
 	 * Parsing
 	 */
