@@ -9,10 +9,18 @@ int main(int argc, char *argv[]) {
 		std::cout << "arg[" << i << "]: " << argv[i] << "\n";
 	}
 
-	if(argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <executable_path>" << "\n";
+	if(argc < 4) {
+		std::cerr << "Usage: " << argv[0] << " <first_path> " << "<first_pdb> " << "<second_path> " << "<second_pdb>" << "\n";
 		return 1;
 	}
+
+	const char* originalPath = argv[1];
+	const char* originalPDBPath = argv[2];
+	const char* targetPath = argv[3];
+	const char* targetPDBPath = argv[4];
+
+	ExecutableFile originalExecutable(originalPath, originalPDBPath);
+	ExecutableFile targetExecutable(targetPath, targetPDBPath);
 
 	/*
 	zasm::Program program(zasm::MachineMode::AMD64);
@@ -47,7 +55,7 @@ int main(int argc, char *argv[]) {
 	
 	*/
 
-	
+	/*
 	ExecutableFile file(argv[1]);
 	ImageSection* newSection;
 	file.createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &newSection);
@@ -58,6 +66,8 @@ int main(int argc, char *argv[]) {
 
 	// Save the modified executable file to a new file
 	file.save("modified.exe");
+	*/
+
 
 	std::cin.get();
 	return 0;

@@ -29,7 +29,7 @@ ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImpor
 	file.close();
 }
 
-ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view pdbPath) : m_pdbFile(this, pdbPath)
+ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view pdbPath)
 {
 	std::ifstream file(executablePath.data(), std::ios::binary);
 	if (!file.is_open())
@@ -46,6 +46,8 @@ ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view
 	parse();
 
 	file.close();
+
+	m_pdbFile = PDBFile(this, pdbPath);
 }
 
 

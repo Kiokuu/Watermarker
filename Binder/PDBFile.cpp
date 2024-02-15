@@ -95,11 +95,10 @@ PDBFile::PDBFile(ExecutableFile* executableFile, std::string_view path) :
 			UnDecorateSymbolNameW(name, m_symbolBuffer, std::size<wchar_t>(m_symbolBuffer), UNDNAME_NAME_ONLY);
 
 			std::string symbolName = Binder::convertToChar(m_symbolBuffer);
-			std::string filteredName = std::regex_replace(symbolName, nameRegex, "") + "_" + std::to_string(executableFile->getHash() * rva); // Add hash to avoid name collisions
+			std::string filteredName = std::regex_replace(symbolName, nameRegex, "") + "_" + std::to_string(m_executableFile->getHash() * rva); // Add hash to avoid name collisions
 
-		    //std::cout << "RVA: 0x" << std::hex << rva << "  " << symbolName << '\n';
-
-			std::cout << filteredName << '\n';
+			std::cout << "Filtered Name: " << filteredName << '\n';
+		    std::cout << "RVA: 0x" << std::hex << rva << "  " << symbolName << '\n';
 
 			m_symbols[rva] = filteredName;
 			

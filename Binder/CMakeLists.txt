@@ -13,8 +13,8 @@ FetchContent_MakeAvailable(zasm)
 # Add source to this project's executable.
 add_executable (Binder "Binder.cpp" "Binder.h" "main.cpp" "ExecutableFile.h" "ExecutableFile.cpp" "ImageSection.h" "ImageSection.cpp" "ImportedModule.h" "ExportedModule.h" "Utils.h" "Disassembler.h" "Disassembler.cpp" "PDBFile.h" "PDBFile.cpp")
 
-target_include_directories(Binder PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include ${DIASDK_INCLUDE_DIRS})
-target_link_libraries(Binder PRIVATE zasm ${DIASDK_LIBRARIES})
+target_include_directories(Binder PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include PUBLIC ${DIASDK_INCLUDE_DIRS})
+target_link_libraries(Binder PRIVATE zasm ${DIASDK_LIBRARIES} dbghelp)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Binder PROPERTY CXX_STANDARD 20)
