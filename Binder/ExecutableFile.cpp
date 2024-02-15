@@ -29,6 +29,26 @@ ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImpor
 	file.close();
 }
 
+ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view pdbPath) : m_pdbFile(this, pdbPath)
+{
+	std::ifstream file(executablePath.data(), std::ios::binary);
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+
+	file.seekg(0, std::ios::end);
+	m_data.resize(file.tellg());
+	file.seekg(0, std::ios::beg);
+
+	file.read(reinterpret_cast<char*>(m_data.data()), m_data.size());
+
+	parse();
+
+	file.close();
+}
+
+
 void ExecutableFile::save(std::string_view savePath)
 {
 	if(m_rewriteImportsOnSave)

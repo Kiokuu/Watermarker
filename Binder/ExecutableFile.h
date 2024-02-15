@@ -9,6 +9,7 @@
 #include "Windows.h"
 #include "ImportedModule.h"
 #include "ExportedModule.h"
+#include "PDBFile.h"
 
 
 /**
@@ -29,6 +30,8 @@ class ExecutableFile
 public:
 	explicit ExecutableFile() = default;
 	explicit ExecutableFile(std::string_view executablePath);
+	explicit ExecutableFile(std::string_view executablePath, std::string_view pdbPath);
+
 	~ExecutableFile() = default;
 
 	void save(std::string_view savePath);
@@ -37,6 +40,9 @@ public:
 
 	void addImport(std::string moduleName, std::string functionName);
 	void rewriteImports();
+
+	uint32_t getImageBase()	const {return m_ntHeaders.OptionalHeader.ImageBase; }
+	uint64_t getHash() const {return m_data.size();}
 
 	uint32_t getImportAddress(std::string_view moduleName, std::string_view functionName);
 
@@ -75,6 +81,7 @@ private:
 
 	IMAGE_DOS_HEADER m_dosHeader;
 	IMAGE_NT_HEADERS m_ntHeaders;
+	PDBFile m_pdbFile;
 
 	bool m_rewriteImportsOnSave;
 };
