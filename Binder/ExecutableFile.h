@@ -33,6 +33,9 @@ public:
 
 	bool createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics, ImageSection** outSection);
 
+	void setEntryPoint(uint32_t entryPoint) { m_ntHeaders.OptionalHeader.AddressOfEntryPoint = entryPoint; }
+
+	uint32_t getEntryPoint() const { return m_ntHeaders.OptionalHeader.AddressOfEntryPoint; }
 	const std::vector<uint8_t>& getData() const { return m_data; }
 	const std::vector<ImageSection>& getSections() const { return m_sections; }
 	const std::vector<ImportedModule>& getImports() const { return m_imports; }
@@ -53,6 +56,7 @@ private:
 
 	ImageSection* getSection(std::string_view name);
 	ImageSection* getSection(uint32_t virtualAddress);
+
 	bool _createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, ImageSection** outSection);
 
 	std::vector<uint8_t> m_data;
