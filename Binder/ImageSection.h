@@ -9,7 +9,7 @@ public:
 	explicit ImageSection() = default;
 
 	explicit ImageSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress,
-	             uint32_t rawSize, uint32_t characteristics, const std::span<uint8_t>& data) :
+	                      uint32_t rawSize, uint32_t characteristics, const std::span<uint8_t>& data) :
 		m_name(name),
 		m_virtualAddress(virtualAddress),
 		m_virtualSize(virtualSize),
@@ -17,7 +17,8 @@ public:
 		m_rawSize(rawSize),
 		m_characteristics(characteristics),
 		m_data(data)
-	{}
+	{
+	}
 
 	std::string_view getName() const { return m_name; }
 	uint32_t getVirtualAddress() const { return m_virtualAddress; }

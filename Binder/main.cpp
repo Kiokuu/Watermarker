@@ -4,13 +4,17 @@
 #include "zasm/serialization/serializer.hpp"
 #include "zasm/x86/assembler.hpp"
 
-int main(int argc, char *argv[]) {
-	for(int i = 0; i < argc; i++) {
+int main(int argc, char* argv[])
+{
+	for (int i = 0; i < argc; i++)
+	{
 		std::cout << "arg[" << i << "]: " << argv[i] << "\n";
 	}
 
-	if(argc < 4) {
-		std::cerr << "Usage: " << argv[0] << " <first_path> " << "<first_pdb> " << "<second_path> " << "<second_pdb>" << "\n";
+	if (argc < 4)
+	{
+		std::cerr << "Usage: " << argv[0] << " <first_path> " << "<first_pdb> " << "<second_path> " << "<second_pdb>" <<
+			"\n";
 		return 1;
 	}
 

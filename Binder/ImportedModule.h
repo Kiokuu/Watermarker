@@ -20,10 +20,10 @@ public:
 	{
 	}
 
-    std::string_view getName() const { return std::get<std::string>(m_data); }
-    uint64_t getOrdinal() const { return std::get<uint64_t>(m_data); }
-    bool getOriginal() const { return m_original; }
-    bool getIsOrdinal() const { return m_isOrdinal; }
+	std::string_view getName() const { return std::get<std::string>(m_data); }
+	uint64_t getOrdinal() const { return std::get<uint64_t>(m_data); }
+	bool getOriginal() const { return m_original; }
+	bool getIsOrdinal() const { return m_isOrdinal; }
 
 	void setOriginal(bool original) { m_original = original; }
 
@@ -46,7 +46,7 @@ public:
 	std::string_view getName() const { return m_name; }
 	const std::vector<ImportedFunction>& getFunctions() const { return m_functions; }
 
-	void addFunction(std::string name, bool isOriginal=false)
+	void addFunction(std::string name, bool isOriginal = false)
 	{
 		for (auto& function : m_functions)
 		{
@@ -59,11 +59,11 @@ public:
 		m_functions.emplace_back(name, isOriginal);
 	}
 
-	void addFunction(uint64_t ordinal, bool isOriginal=false)
+	void addFunction(uint64_t ordinal, bool isOriginal = false)
 	{
 		for (auto& function : m_functions)
 		{
-			if (function.getIsOrdinal() && function.getOrdinal()==ordinal)
+			if (function.getIsOrdinal() && function.getOrdinal() == ordinal)
 			{
 				return;
 			}
@@ -81,7 +81,7 @@ public:
 				return &function;
 			}
 		}
-	
+
 		return nullptr;
 	}
 

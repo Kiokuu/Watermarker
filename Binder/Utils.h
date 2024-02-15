@@ -2,7 +2,7 @@
 
 namespace Binder
 {
-	template<typename T>
+	template <typename T>
 	inline static T alignTo(T value, T alignment)
 	{
 		return (value + alignment - 1) & ~(alignment - 1);
@@ -12,7 +12,7 @@ namespace Binder
 	{
 		const size_t size = strlen(src) + 1;
 
-		wchar_t* dest = new wchar_t[size];
+		auto dest = new wchar_t[size];
 		size_t outSize;
 		errno_t err = mbstowcs_s(&outSize, dest, size, src, size - 1);
 		std::wstring result(dest);
@@ -25,7 +25,7 @@ namespace Binder
 	{
 		const size_t size = wcslen(src) + 1;
 
-		char* dest = new char[size];
+		auto dest = new char[size];
 		size_t outSize;
 		errno_t err = wcstombs_s(&outSize, dest, size, src, size - 1);
 		std::string result(dest);

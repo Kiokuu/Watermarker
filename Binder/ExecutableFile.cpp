@@ -9,7 +9,7 @@ ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImpor
 	// Open the executable file
 	std::ifstream file(executablePath.data(), std::ios::binary);
 
-	if(!file.is_open())
+	if (!file.is_open())
 	{
 		throw std::runtime_error("Failed to open file");
 	}
@@ -53,7 +53,7 @@ ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view
 
 void ExecutableFile::save(std::string_view savePath)
 {
-	if(m_rewriteImportsOnSave)
+	if (m_rewriteImportsOnSave)
 		rewriteImports();
 
 	// Recalculate header size and image size.
@@ -63,10 +63,10 @@ void ExecutableFile::save(std::string_view savePath)
 	sizeOfHeaders = Binder::alignTo(sizeOfHeaders, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 
 	const auto max_virtual_address = std::ranges::max_element(m_sections,
-	  [](const ImageSection& a, const ImageSection& b)
-	  {
-	      return a.getVirtualAddress() < b.getVirtualAddress();
-	  });
+	                                                          [](const ImageSection& a, const ImageSection& b)
+	                                                          {
+		                                                          return a.getVirtualAddress() < b.getVirtualAddress();
+	                                                          });
 
 	uint32_t sizeOfImage = max_virtual_address->getVirtualAddress() + max_virtual_address->getVirtualSize();
 	sizeOfImage = Binder::alignTo(sizeOfImage, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.SectionAlignment));
@@ -76,7 +76,8 @@ void ExecutableFile::save(std::string_view savePath)
 	m_ntHeaders.FileHeader.NumberOfSections = m_sections.size();
 
 
-	HANDLE saveFile = CreateFileA(savePath.data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	HANDLE saveFile = CreateFileA(savePath.data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
+	                              nullptr);
 	if (saveFile == INVALID_HANDLE_VALUE)
 	{
 		throw std::runtime_error("Failed to create save file");
@@ -85,7 +86,7 @@ void ExecutableFile::save(std::string_view savePath)
 	DWORD totalBytesWritten = 0;
 	DWORD bytesWritten = 0;
 
-	
+
 	// Write dos header
 	WriteFile(saveFile, &m_dosHeader, sizeof(m_dosHeader), &bytesWritten, nullptr);
 	totalBytesWritten += bytesWritten;
@@ -158,7 +159,7 @@ void ExecutableFile::save(std::string_view savePath)
 }
 
 bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics,
-	ImageSection** outSection)
+                                   ImageSection** outSection)
 {
 	const AddressPair addressPair = getNextAddress();
 	ImageSection* section = nullptr;
@@ -284,10 +285,10 @@ void ExecutableFile::rewriteImports()
 			IMAGE_THUNK_DATA thunkData = {};
 			//thunkData.u1.AddressOfData = importAddressPair.virtualAddress + (iatSize + idtSize + iltSize + hintNameTableOffset);
 
-			if(!function.getIsOrdinal())
+			if (!function.getIsOrdinal())
 			{
 				thunkData.u1.AddressOfData = importAddressPair.virtualAddress + iatSize + idtSize + iltSize +
-				hintNameTableOffset;
+					hintNameTableOffset;
 
 				memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
 				memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
@@ -300,7 +301,8 @@ void ExecutableFile::rewriteImports()
 				memcpy(hintTableData.data() + hintNameTableOffset, &hint, sizeof(hint));
 				hintNameTableOffset += sizeof(hint);
 
-				memcpy(hintTableData.data() + hintNameTableOffset, function.getName().data(), function.getName().size());
+				memcpy(hintTableData.data() + hintNameTableOffset, function.getName().data(),
+				       function.getName().size());
 				hintNameTableOffset += function.getName().size() + 1; // null terminator
 
 				// align on even boundary
@@ -316,7 +318,8 @@ void ExecutableFile::rewriteImports()
 				memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
 				memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
 
-				m_addressMap[std::string(module.getName()) + "." + std::to_string(function.getOrdinal())] = importAddressPair.
+				m_addressMap[std::string(module.getName()) + "." + std::to_string(function.getOrdinal())] =
+					importAddressPair.
 					virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
 			}
 
@@ -381,12 +384,10 @@ void ExecutableFile::rewriteImports()
 		{
 			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
-				if(m_addressMap.contains(moduleName + "." + std::to_string(thunk->u1.Ordinal)))
+				if (m_addressMap.contains(moduleName + "." + std::to_string(thunk->u1.Ordinal)))
 				{
-
-
-					thunk->u1.Ordinal = m_ntHeaders.OptionalHeader.ImageBase + m_addressMap[moduleName + "." + std::to_string(thunk->u1.Ordinal)];
-
+					thunk->u1.Ordinal = m_ntHeaders.OptionalHeader.ImageBase + m_addressMap[moduleName + "." +
+						std::to_string(thunk->u1.Ordinal)];
 				}
 
 				++count;
@@ -657,7 +658,6 @@ void ExecutableFile::parseImports()
 
 void ExecutableFile::parseExports()
 {
-	
 }
 
 ImageSection* ExecutableFile::getSection(std::string_view name)
@@ -685,7 +685,9 @@ ImageSection* ExecutableFile::getSection(uint32_t virtualAddress)
 	return nullptr;
 }
 
-bool ExecutableFile::_createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, ImageSection** outSection)
+bool ExecutableFile::_createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize,
+                                    uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics,
+                                    ImageSection** outSection)
 {
 	if (getSection(virtualAddress) != nullptr)
 	{

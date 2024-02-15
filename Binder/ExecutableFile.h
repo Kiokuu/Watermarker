@@ -36,13 +36,14 @@ public:
 
 	void save(std::string_view savePath);
 
-	bool createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics, ImageSection** outSection);
+	bool createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics,
+	                   ImageSection** outSection);
 
 	void addImport(std::string moduleName, std::string functionName);
 	void rewriteImports();
 
-	uint32_t getImageBase()	const {return m_ntHeaders.OptionalHeader.ImageBase; }
-	uint64_t getHash() const {return m_data.size();}
+	uint32_t getImageBase() const { return m_ntHeaders.OptionalHeader.ImageBase; }
+	uint64_t getHash() const { return m_data.size(); }
 
 	uint32_t getImportAddress(std::string_view moduleName, std::string_view functionName);
 
@@ -69,7 +70,8 @@ private:
 	ImageSection* getSection(std::string_view name);
 	ImageSection* getSection(uint32_t virtualAddress);
 
-	bool _createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, ImageSection** outSection);
+	bool _createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress,
+	                    uint32_t rawSize, uint32_t characteristics, ImageSection** outSection);
 
 	std::vector<uint8_t> m_data;
 	std::vector<ImageSection> m_sections;
