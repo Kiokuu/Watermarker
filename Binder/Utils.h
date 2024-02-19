@@ -10,6 +10,9 @@ namespace Binder
 
 	inline std::wstring convertToWChar(const char* src)
 	{
+		if(src == nullptr)
+			return std::wstring();
+
 		const size_t size = strlen(src) + 1;
 
 		auto dest = new wchar_t[size];
@@ -23,6 +26,9 @@ namespace Binder
 
 	inline std::string convertToChar(const wchar_t* src)
 	{
+		if(src == nullptr)
+			return std::string();
+
 		const size_t size = wcslen(src) + 1;
 
 		auto dest = new char[size];
