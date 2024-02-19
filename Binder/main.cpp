@@ -1,4 +1,6 @@
 #include <iostream>
+
+#include "Binder.h"
 #include "ExecutableFile.h"
 #include "zasm/program/program.hpp"
 #include "zasm/serialization/serializer.hpp"
@@ -25,6 +27,8 @@ int main(int argc, char* argv[])
 
 	ExecutableFile originalExecutable(originalPath, originalPDBPath);
 	ExecutableFile targetExecutable(targetPath, targetPDBPath);
+
+	Binder binder(&originalExecutable, &targetExecutable);
 
 	/*
 	zasm::Program program(zasm::MachineMode::AMD64);

@@ -1,8 +1,18 @@
-﻿// Binder.h : Include file for standard system include files,
-// or project specific include files.
+﻿#pragma once
+#include "ExecutableFile.h"
 
-#pragma once
+class Disassembler;
 
-#include <iostream>
+class Binder
+{
+public:
+	Binder(ExecutableFile* initialExecutable, ExecutableFile* targetExecutable);
+	void bind();
 
-// TODO: Reference additional headers your program requires here.
+
+private:
+	ExecutableFile* m_initialExecutable;
+	ExecutableFile* m_targetExecutable;
+	ExecutableFile m_resultExecutable;
+	Disassembler* m_disassembler;
+};
