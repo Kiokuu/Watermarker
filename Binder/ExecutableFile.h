@@ -44,8 +44,10 @@ public:
 
 	uint32_t getImageBase() const { return m_ntHeaders.OptionalHeader.ImageBase; }
 	uint64_t getHash() const { return m_data.size(); }
-
+	PDBFile* getPDBFile() { return &m_pdbFile; }
 	uint32_t getImportAddress(std::string_view moduleName, std::string_view functionName);
+	AddressPair getFirstSectionAddress() const;
+
 
 	void setEntryPoint(uint32_t entryPoint) { m_ntHeaders.OptionalHeader.AddressOfEntryPoint = entryPoint; }
 	uint32_t getEntryPoint() const { return m_ntHeaders.OptionalHeader.AddressOfEntryPoint; }
@@ -55,7 +57,7 @@ public:
 
 private:
 	AddressPair getNextAddress() const;
-	AddressPair getFirstSectionAddress() const;
+	
 
 	/**
 	 * Parsing
