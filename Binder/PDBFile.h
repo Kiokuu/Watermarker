@@ -66,7 +66,7 @@ public:
 
 
 	bool getSymbol(uint64_t address, Symbol* outSymbol) const;
-	const std::unordered_map<uint64_t, Symbol>& getSymbols() const { return m_symbols; }
+	std::unordered_map<uint64_t, Symbol>& getSymbols() { return m_symbols; }
 
 
 	ExecutableFile* getExecutableFile() const { return m_executableFile; }
