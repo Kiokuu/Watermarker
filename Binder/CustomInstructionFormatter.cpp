@@ -6,7 +6,7 @@
 #include "Zycore/Format.h"
 #include "Zydis/Utils.h"
 
-CustomInstructionFormatter::CustomInstructionFormatter(uint64_t imageBase, const std::unordered_map<uint64_t, Symbol>& symbolMap) : m_image_base(imageBase), m_symbols(symbolMap), m_formatter()
+CustomInstructionFormatter::CustomInstructionFormatter(uint64_t imageBase, std::unordered_map<uint64_t, Symbol>& symbolMap) : m_image_base(imageBase), m_symbols(symbolMap), m_formatter()
 {
 	initialize();
 	setupHooks();
@@ -46,6 +46,11 @@ ZyanStatus CustomInstructionFormatter::hook_print_address_abs(const ZydisFormatt
 
 		return ZyanStringAppendFormat(string, "%s", symbol.getName().c_str());
 	}
+	else
+	{
+		std::string newSymbolName = "someLabel_" + std::to_string(m_image_base + offset);
+		m_symbols[offset] = Symbol(newSymbolName, 0, SymbolType::Label, true);
+	}
 
 	return m_print_address_abs(formatter, buffer, context);
 }
@@ -72,6 +77,11 @@ ZyanStatus CustomInstructionFormatter::hook_print_address_rel(const ZydisFormatt
 		ZydisFormatterBufferGetString(buffer, &string);
 
 		return ZyanStringAppendFormat(string, "<%s>", symbol.getName().c_str());
+	}
+	else
+	{
+		std::string newSymbolName = "someLabel_" + std::to_string(m_image_base + offset);
+		m_symbols[offset] = Symbol(newSymbolName, 0, SymbolType::Label, true);
 	}
 
 	return m_print_address_rel(formatter, buffer, context);

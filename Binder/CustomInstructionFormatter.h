@@ -6,12 +6,12 @@
 class CustomInstructionFormatter
 {
 public:
-	CustomInstructionFormatter(uint64_t image_base, const std::unordered_map<uint64_t, Symbol>& symbolMap);
+	CustomInstructionFormatter(uint64_t image_base, std::unordered_map<uint64_t, Symbol>& symbolMap);
 	const ZydisFormatter* getFormatter() const { return &m_formatter; }
 
 private:
 	uint64_t m_image_base;
-	const std::unordered_map<uint64_t, Symbol>& m_symbols;
+	std::unordered_map<uint64_t, Symbol>& m_symbols;
 	ZydisFormatter m_formatter;
 
 	void initialize();

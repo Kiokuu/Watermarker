@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include "PDBFile.h"
 #include "DataEntry.h"
@@ -35,9 +36,14 @@
 	jb somewhereelse ; 0x40011ef7
 
 	blahblah:
-	add r9, 0x28 ; 0x40011ef9 
+	add r9, 0x28 ; 0x40011ef9
 
- * - Write sections properly
+    (almost done, needs testing)
+
+
+ * - Write sections properly (atm its a bit messed up, multiple writes of same section
+ *
+ * - Add a writer to keep track of indentation
  */
 
 Disassembler::Disassembler(ExecutableFile* executableFile) : m_executable_file(executableFile)
@@ -113,7 +119,7 @@ void Disassembler::disassemble_data()
 
 void Disassembler::disassemble_functions()
 {
-	const PDBFile* pdbFile = m_executable_file->getPDBFile();
+	PDBFile* pdbFile = m_executable_file->getPDBFile();
     const std::vector<ImageSection>& sections = m_executable_file->getSections();
 
     std::cout << "===================================================" << "\n";
@@ -132,6 +138,8 @@ void Disassembler::disassemble_functions()
 
     for (const ImageSection& section : sections) {
         ZyanU64 runtime_address = m_executable_file->getImageBase() + section.getVirtualAddress();
+        std::vector<Function>& functions = m_functions[section.getVirtualAddress()];
+
 
         if(!(section.getCharacteristics() & IMAGE_SCN_MEM_EXECUTE))
 		{
@@ -146,31 +154,61 @@ void Disassembler::disassemble_functions()
 
         std::cout << "Section: " << section.getName() << "\n";
 
-        Symbol currentFunctionSymbol;
-        size_t currentFunctionOffset = 0;
 
+        // TODO: not do this, and find another way.
+        while (offset < data.size()) {
+            uint32_t remaining_size = data.size() - offset;
+            ZyanStatus status = ZydisDecoderDecodeFull(&decoder, data.data() + offset, remaining_size, &instruction, operands);
+            Symbol symbol;
 
+            if (status != ZYAN_STATUS_SUCCESS) {
+                if(status == ZYDIS_STATUS_NO_MORE_DATA)
+                {
+                    std::cout << "No more data..." << "\n";
+	                break;
+                }
+
+                std::cerr << "Error decoding instruction at offset " << offset << "\n";
+                //std::cerr << "Status: " <<  FormatZyanStatus(status) << "\n";
+                printf("%016" PRIX64 "  \n", runtime_address);
+                offset++;
+                continue;
+            }
+
+            char buffer[512];
+
+            CustomUserData userData = {&customFormatter};
+
+            ZydisFormatterFormatInstruction(formatter, &instruction, operands, instruction.operand_count_visible, buffer, sizeof(buffer), runtime_address, (void*)&userData);
+            offset += instruction.length;
+            runtime_address += instruction.length;
+        }
+
+        // ----------------------------------------------------
+
+        offset = 0;
+        runtime_address = m_executable_file->getImageBase() + section.getVirtualAddress();
+
+    	Function currentFunction {"start_unk", 0};
+        //size_t currentFunctionOffset = 0;
+
+        // Run again with our new labels
         while (offset < data.size()) {
             uint32_t remaining_size = data.size() - offset;
 
             ZyanStatus status = ZydisDecoderDecodeFull(&decoder, data.data() + offset, remaining_size, &instruction, operands);
 
-            // 2149580800
-
             // Get symbol for runtime address, print symbol name, size, and data
+
             Symbol symbol;
+
             if(pdbFile->getSymbol(runtime_address - m_executable_file->getImageBase(), &symbol))
             {
                 //temp
-                m_output << symbol.getName() << ":\n";
+                //m_output << symbol.getName() << ":\n";
 
-
-                currentFunctionSymbol = symbol;
-                currentFunctionOffset = 0;
-                m_functions.emplace_back(Function(symbol.getName(), symbol.getLength()));
-
-                auto data = section.getData().subspan(offset, symbol.getLength());
-                std::cout << "\nSymbol Name: " << symbol.getName() << " length: " << symbol.getLength() << "\n";
+                functions.push_back(currentFunction);
+                currentFunction = Function(symbol);
 			}
 
             if (status != ZYAN_STATUS_SUCCESS) {
@@ -184,27 +222,29 @@ void Disassembler::disassemble_functions()
                 //std::cerr << "Status: " <<  FormatZyanStatus(status) << "\n";
                 printf("%016" PRIX64 "  \n", runtime_address);
                 offset++;
-                currentFunctionOffset++;
                 continue;
             }
 
             char buffer[512];
 
             CustomUserData userData = {&customFormatter};
-
             ZydisFormatterFormatInstruction(formatter, &instruction, operands, instruction.operand_count_visible, buffer, sizeof(buffer), runtime_address, (void*)&userData);
 
             size_t bufferLength = strlen(buffer);
 
-            m_output << "\t" << buffer << " ; 0x" <<  std::hex << runtime_address << std::dec << "\n";
+            //m_output << "\t" << buffer << " ; 0x" <<  std::hex << runtime_address << std::dec << "\n";
 
+            //std::stringstream instr;
+            //instr << "\t" << buffer << " ; 0x" <<  std::hex << runtime_address << std::dec << "\n";
+
+            Instruction instr(buffer, runtime_address);
+            currentFunction.addInstruction(instr);
 
             offset += instruction.length;
-        	currentFunctionOffset += instruction.length;
             runtime_address += instruction.length;
 
 
-            m_instructions.push_back(instruction);// TODO: Transform into own representation with symbols, also instruction is just info about the decoded instruction
+            //m_instructions.push_back(instruction);// TODO: Transform into own representation with symbols, also instruction is just info about the decoded instruction
         }
         std::cout << "===================================================" << "\n";
     
@@ -224,16 +264,48 @@ void Disassembler::write_globals()
 
     for(const auto& function : m_functions)
 	{
-		m_output << "global " << function.getName() << "\n";
+		//m_output << "; " << function.first << "\n";
+        for (const auto& f : function.second)
+        {
+	        m_output << "global " << f.getName() << "\n";
+		}
 	}
 
     m_output << "\n";
 }
 
+void Disassembler::write_section(const ImageSection* section)
+{
+    uint64_t sectionCharacteristics = section->getCharacteristics();
+
+    std::string flags;
+
+    if(sectionCharacteristics & IMAGE_SCN_CNT_CODE || sectionCharacteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)
+    {
+        flags += " alloc";
+	}
+    
+    if (sectionCharacteristics & IMAGE_SCN_MEM_EXECUTE)
+    {
+        flags += " exec";
+    }
+    if (sectionCharacteristics & IMAGE_SCN_MEM_WRITE)
+    {
+        flags += " write";
+    }
+
+
+    // Get section name, remove null bytes
+    std::string sectionName = section->getName().data();
+    std::erase(sectionName, '\0');
+
+    m_output << "section " << sectionName << flags << "\n";
+}
+
 void Disassembler::write_data()
 {
-    // todo make everything global before.
-    m_output << "section .data\n";
+
+    m_output << "section .data\n"; // todo: split data up properly
 
 	for (const auto& [address, data] : m_data)
 	{
@@ -253,5 +325,14 @@ void Disassembler::write_data()
 
 void Disassembler::write_functions()
 {
-    m_output << "section .text\n";
+    for(const auto& functionSection : m_functions)
+    {
+	    write_section(m_executable_file->getSection(functionSection.first));
+
+		for (const auto& f : functionSection.second)
+		{
+			m_output << f.getName() << ":\n";
+			m_output << f.getInstructionString();
+		}
+	}
 }
