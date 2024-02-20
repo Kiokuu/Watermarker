@@ -660,7 +660,7 @@ void ExecutableFile::parseExports()
 {
 }
 
-ImageSection* ExecutableFile::getSection(std::string_view name)
+const ImageSection* ExecutableFile::getSection(std::string_view name)
 {
 	for (auto& section : m_sections)
 	{
@@ -672,7 +672,7 @@ ImageSection* ExecutableFile::getSection(std::string_view name)
 	return nullptr;
 }
 
-ImageSection* ExecutableFile::getSection(uint32_t virtualAddress)
+const ImageSection* ExecutableFile::getSection(uint32_t virtualAddress)
 {
 	for (auto& section : m_sections)
 	{

@@ -54,6 +54,8 @@ public:
 	const std::vector<uint8_t>& getData() const { return m_data; }
 	const std::vector<ImageSection>& getSections() const { return m_sections; }
 	const std::vector<ImportedModule>& getImports() const { return m_imports; }
+	const ImageSection* getSection(std::string_view name);
+	const ImageSection* getSection(uint32_t virtualAddress);
 
 private:
 	AddressPair getNextAddress() const;
@@ -69,8 +71,7 @@ private:
 	void parseImports();
 	void parseExports();
 
-	ImageSection* getSection(std::string_view name);
-	ImageSection* getSection(uint32_t virtualAddress);
+
 
 	bool _createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress,
 	                    uint32_t rawSize, uint32_t characteristics, ImageSection** outSection);
