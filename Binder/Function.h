@@ -24,12 +24,30 @@ public:
 		m_instructions.push_back(instruction);
 	}
 
+    bool getLastInstruction(Instruction** outInstruction)
+    {
+        if (m_instructions.empty())
+        {
+            *outInstruction = nullptr;
+            return false;
+        }
+        
+        *outInstruction = &m_instructions.back();
+        return true;
+    }
+
+
 	std::string getInstructionString() const
 	{
 		std::stringstream instructionString;
 
 		for (const auto& instruction : m_instructions)
 		{
+			if(instruction.getRepeats()>1)
+			{
+				instructionString << "\t" << "times " << instruction.getRepeats() << " " << instruction.getInstruction() << std::hex << " ; 0x" << instruction.getRuntimeAddress() << std::dec << "\n";
+			}
+
 			instructionString << "\t" << instruction.getInstruction() << std::hex << " ; 0x" << instruction.getRuntimeAddress() << std::dec << "\n";
 		}
 		return instructionString.str();

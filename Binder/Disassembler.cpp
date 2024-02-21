@@ -44,6 +44,8 @@
  * - Write sections properly (atm its a bit messed up, multiple writes of same section
  *
  * - Add a writer to keep track of indentation
+ *
+ * - Not all labels are added. alot of undefined. Need full refactor.
  */
 
 Disassembler::Disassembler(ExecutableFile* executableFile) : m_executable_file(executableFile)
@@ -198,10 +200,7 @@ void Disassembler::disassemble_functions()
 
             ZyanStatus status = ZydisDecoderDecodeFull(&decoder, data.data() + offset, remaining_size, &instruction, operands);
 
-            // Get symbol for runtime address, print symbol name, size, and data
-
             Symbol symbol;
-
             if(pdbFile->getSymbol(runtime_address - m_executable_file->getImageBase(), &symbol))
             {
                 //temp
@@ -230,7 +229,7 @@ void Disassembler::disassemble_functions()
             CustomUserData userData = {&customFormatter};
             ZydisFormatterFormatInstruction(formatter, &instruction, operands, instruction.operand_count_visible, buffer, sizeof(buffer), runtime_address, (void*)&userData);
 
-            size_t bufferLength = strlen(buffer);
+
 
             //m_output << "\t" << buffer << " ; 0x" <<  std::hex << runtime_address << std::dec << "\n";
 
@@ -238,7 +237,19 @@ void Disassembler::disassemble_functions()
             //instr << "\t" << buffer << " ; 0x" <<  std::hex << runtime_address << std::dec << "\n";
 
             Instruction instr(buffer, runtime_address);
-            currentFunction.addInstruction(instr);
+            Instruction* lastInstruction = nullptr;
+            bool addInstruction = true;
+
+            if (currentFunction.getLastInstruction(&lastInstruction)) {
+                if(lastInstruction->getInstruction() == instr.getInstruction())
+                {
+	                lastInstruction->setRepeats(lastInstruction->getRepeats() + 1);
+					addInstruction = false;
+				}
+            }
+
+            if(addInstruction)
+				currentFunction.addInstruction(instr);
 
             offset += instruction.length;
             runtime_address += instruction.length;
@@ -254,6 +265,19 @@ void Disassembler::disassemble_functions()
 
 void Disassembler::write_globals()
 {
+
+    m_output << "; Globals\n";
+
+    for(const auto& [address, symbol] : m_executable_file->getPDBFile()->getSymbols())
+    {
+	    if(symbol.getType() == SymbolType::Data || symbol.getType() == SymbolType::Function || symbol.getType() == SymbolType::Label)
+	    {
+	    	m_output << "global " << symbol.getName() << " ; " << address << "\n";
+		}
+	}
+
+
+    /*
     m_output << "; Data\n";
 	for(const auto& [address, data] : m_data)
 	{
@@ -270,7 +294,7 @@ void Disassembler::write_globals()
 	        m_output << "global " << f.getName() << "\n";
 		}
 	}
-
+    */
     m_output << "\n";
 }
 
