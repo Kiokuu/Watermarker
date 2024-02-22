@@ -47,8 +47,10 @@ public:
 			{
 				instructionString << "\t" << "times " << instruction.getRepeats() << " " << instruction.getInstruction() << std::hex << " ; 0x" << instruction.getRuntimeAddress() << std::dec << "\n";
 			}
-
-			instructionString << "\t" << instruction.getInstruction() << std::hex << " ; 0x" << instruction.getRuntimeAddress() << std::dec << "\n";
+			else
+			{
+				instructionString << "\t" << instruction.getInstruction() << std::hex << " ; 0x" << instruction.getRuntimeAddress() << std::dec << "\n";
+			}
 		}
 		return instructionString.str();
 	}
