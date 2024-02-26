@@ -2,12 +2,14 @@
 //
 
 #include "DX11TestApplication.h"
-#include <iostream>
+
+#include <cstdio>
+//#include <iostream>
 
 int main()
 {
-	std::cout << "Hi" << "\n";
 
-	std::cin.get();
+	printf("Hello World!");
+	getchar();
 	return 0;
 }
