@@ -6,6 +6,11 @@
 
 int main()
 {
-	MessageBoxA(0, "Box", "Title", 0);
+	//MessageBoxA(0, "Box", "Title", 0);
 	return 0;
+}
+
+__declspec(dllexport) void Watermark()
+{
+	MessageBoxA(0, "Box", "Title", 0);
 }

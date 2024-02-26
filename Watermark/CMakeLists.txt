@@ -1,1 +1,1 @@
-﻿add_executable(Watermark "Watermark.cpp" "Watermark.h")
+﻿add_library(Watermark SHARED "Watermark.cpp" "Watermark.h")
