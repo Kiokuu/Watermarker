@@ -107,11 +107,6 @@ void PDBFile::processSymbol(const CComPtr<IDiaSymbol>& pSymbol)
 	DWORD rva;
 	pSymbol->get_relativeVirtualAddress(&rva);
 
-	if (rva == 0)
-	{
-		return;
-	}
-
 	BSTR name;
 	pSymbol->get_name(&name);
 

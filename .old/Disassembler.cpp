@@ -46,6 +46,10 @@
  * - Add a writer to keep track of indentation
  *
  * - Not all labels are added. alot of undefined. Need full refactor.
+ *
+ * - add support for multiple labels for same address
+ *
+ * - add entry point support 
  */
 
 Disassembler::Disassembler(ExecutableFile* executableFile) : m_executable_file(executableFile)
@@ -55,6 +59,7 @@ Disassembler::Disassembler(ExecutableFile* executableFile) : m_executable_file(e
         std::cerr << "Error opening disassembled.asm" << "\n";
         return; // Exit constructor if file opening failed
     }
+
 
     disassemble_data();
     disassemble_functions();
@@ -98,6 +103,8 @@ void Disassembler::disassemble_data()
             	SymbolType type = symbol.getType();
                 size_t length = symbol.getLength();
 
+
+
                 const std::span<uint8_t>& data = section.getData().subspan(offset, length);
                 std::cout << "\nSymbol Name: " << symbol.getName() << " length: " << length << "\n";
                 std::cout << "Symbol Data: ";
@@ -110,8 +117,6 @@ void Disassembler::disassemble_data()
                 DataEntry dataEnt(symbol.getName(), data);
 
                 m_data[scanAddress] = dataEnt;
-
-                offset += length;
             }
             offset++;
         }
@@ -135,7 +140,7 @@ void Disassembler::disassemble_functions()
         return; // Exit constructor if decoder initialization failed
     }
 
-    CustomInstructionFormatter customFormatter(m_executable_file->getImageBase(), pdbFile->getSymbols());
+    CustomInstructionFormatter customFormatter(m_executable_file->getImageBase() , pdbFile->getSymbols());
 	const ZydisFormatter* formatter = customFormatter.getFormatter();
 
     for (const ImageSection& section : sections) {
@@ -201,9 +206,10 @@ void Disassembler::disassemble_functions()
             ZyanStatus status = ZydisDecoderDecodeFull(&decoder, data.data() + offset, remaining_size, &instruction, operands);
 
             Symbol symbol;
+            
             if(pdbFile->getSymbol(runtime_address - m_executable_file->getImageBase(), &symbol))
             {
-                //temp
+                std::cout << "Accessing symbol at: 0x" << std::hex << runtime_address - m_executable_file->getImageBase() << std::dec << "\n";
                 //m_output << symbol.getName() << ":\n";
 
                 functions.push_back(currentFunction);

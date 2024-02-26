@@ -18,8 +18,12 @@ private:
 	void setupHooks();
 
 
+	ZydisFormatterFunc m_format_operand_imm;
 	ZydisFormatterFunc m_print_address_abs;
 	ZydisFormatterFunc m_print_address_rel;
+
+	ZyanStatus hook_format_operand_imm(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);
+	static ZyanStatus hook_format_operand_imm_thunk(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);
 
 	ZyanStatus hook_print_address_abs(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);
 	static ZyanStatus hook_print_address_abs_thunk(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);

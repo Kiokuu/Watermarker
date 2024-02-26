@@ -19,13 +19,36 @@ void CustomInstructionFormatter::initialize()
 
 void CustomInstructionFormatter::setupHooks()
 {
+	m_format_operand_imm = &hook_format_operand_imm_thunk;
 	m_print_address_abs = &hook_print_address_abs_thunk;
 	m_print_address_rel = &hook_print_address_rel_thunk;
-
+	
+	ZydisFormatterSetHook(&m_formatter, ZYDIS_FORMATTER_FUNC_FORMAT_OPERAND_PTR, (const void**)&m_format_operand_imm);
 	ZydisFormatterSetHook(&m_formatter, ZYDIS_FORMATTER_FUNC_PRINT_ADDRESS_ABS, (const void**)&m_print_address_abs);
 	ZydisFormatterSetHook(&m_formatter, ZYDIS_FORMATTER_FUNC_PRINT_ADDRESS_REL, (const void**)&m_print_address_rel);
 }
 
+
+ZyanStatus CustomInstructionFormatter::hook_format_operand_imm(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context)
+{
+	ZyanString* string;
+	ZydisFormatterBufferGetString(buffer, &string);
+
+	// Read the string
+	const char* operandString;
+	ZyanStringGetData(string, &operandString);
+
+	// print string
+	std::cout << operandString << std::endl;
+
+	return m_format_operand_imm(formatter, buffer, context);
+}
+
+ZyanStatus CustomInstructionFormatter::hook_format_operand_imm_thunk(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context)
+{
+	CustomInstructionFormatter* user_data = ((CustomUserData*)context->user_data)->formatter;
+	return user_data->hook_format_operand_imm(formatter, buffer, context);
+}
 
 
 ZyanStatus CustomInstructionFormatter::hook_print_address_abs(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context)
@@ -50,9 +73,14 @@ ZyanStatus CustomInstructionFormatter::hook_print_address_abs(const ZydisFormatt
 	{
 		std::string newSymbolName = "someLabel_" + std::to_string(m_image_base + offset);
 		m_symbols[offset] = Symbol(newSymbolName, 0, SymbolType::Label, true);
-	}
+		std::cout << "Adding new symbol: " << newSymbolName << " at 0x" << std::hex << offset << std::dec << std::endl;
 
-	return m_print_address_abs(formatter, buffer, context);
+		ZydisFormatterBufferAppend(buffer, ZYDIS_TOKEN_SYMBOL);
+		ZyanString* string;
+		ZydisFormatterBufferGetString(buffer, &string);
+
+		return ZyanStringAppendFormat(string, "%s", newSymbolName.c_str());
+	}
 }
 
 ZyanStatus CustomInstructionFormatter::hook_print_address_abs_thunk(const ZydisFormatter* formatter, ZydisFormatterBuffer* buffer, ZydisFormatterContext* context)
@@ -82,6 +110,14 @@ ZyanStatus CustomInstructionFormatter::hook_print_address_rel(const ZydisFormatt
 	{
 		std::string newSymbolName = "someLabel_" + std::to_string(m_image_base + offset);
 		m_symbols[offset] = Symbol(newSymbolName, 0, SymbolType::Label, true);
+
+		std::cout << "Adding new symbol: " << newSymbolName << " at 0x" << std::hex << offset << std::dec << std::endl;
+
+		ZydisFormatterBufferAppend(buffer, ZYDIS_TOKEN_SYMBOL);
+		ZyanString* string;
+		ZydisFormatterBufferGetString(buffer, &string);
+		
+		return ZyanStringAppendFormat(string, "%s", newSymbolName.c_str());
 	}
 
 	return m_print_address_rel(formatter, buffer, context);

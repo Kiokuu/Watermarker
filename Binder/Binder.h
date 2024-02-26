@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include "ExecutableFile.h"
 
-class Disassembler;
-
 class Binder
 {
 public:
@@ -14,5 +12,4 @@ private:
 	ExecutableFile* m_initialExecutable;
 	ExecutableFile* m_targetExecutable;
 	ExecutableFile m_resultExecutable;
-	Disassembler* m_disassembler;
 };
