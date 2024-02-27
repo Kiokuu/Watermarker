@@ -121,8 +121,8 @@ void ExecutableFile::save(std::string_view savePath)
 		       std::min<size_t>(section.getName().size(), sizeof(sectionHeader.Name)));
 
 
-		std::cout << "Virtual Address: " << section.getVirtualAddress() << "\n";
-		std::cout << "Virtual Size: " << section.getVirtualSize() << "\n";
+		std::cout << "Virtual Address: 0x" << std::hex << section.getVirtualAddress() << std::dec << "\n";
+		std::cout << "Virtual Size: 0x" << std::hex << section.getVirtualSize() << std::dec << "\n";
 
 		WriteFile(saveFile, &sectionHeader, sizeof(sectionHeader), &bytesWritten, nullptr);
 		totalBytesWritten += bytesWritten;
@@ -143,6 +143,14 @@ void ExecutableFile::save(std::string_view savePath)
 	// Write section data
 	for (const auto& section : m_sections)
 	{
+		if(totalBytesWritten < section.getRawAddress())
+		{
+			std::vector<uint8_t> padding(section.getRawAddress() - totalBytesWritten);
+			std::fill(padding.begin(), padding.end(), 0);
+			WriteFile(saveFile, padding.data(), padding.size(), &bytesWritten, nullptr);
+			totalBytesWritten += bytesWritten;
+		}
+
 		WriteFile(saveFile, section.getData().data(), section.getData().size(), &bytesWritten, nullptr);
 		totalBytesWritten += bytesWritten;
 

@@ -38,6 +38,8 @@ int main(int argc, char* argv[])
 	zasm::Serializer serializer;
 
 	ExecutableFile file(argv[1]);
+
+	
 	file.addImport("Watermark.dll", "?Watermark@@YAXXZ");
 	file.rewriteImports();
 
@@ -109,18 +111,9 @@ int main(int argc, char* argv[])
 	
 	*/
 
-	/*
-	ExecutableFile file(argv[1]);
-	ImageSection* newSection;
-	file.createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &newSection);
-
-	uint32_t OEP = file.getEntryPoint();
-
-	file.setEntryPoint(newSection->getVirtualAddress());
-
+	
 	// Save the modified executable file to a new file
-	file.save("modified.exe");
-	*/
+	//file.save("modified.exe");
 
 
 	std::cin.get();

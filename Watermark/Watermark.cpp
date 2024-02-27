@@ -16,5 +16,5 @@ int main()
 __declspec(dllexport) void Watermark()
 {
 	std::cout << "Hi from watermark!" << std::endl;
-	//MessageBoxA(0, "Box", "Title", 0);
+	MessageBoxA(0, "Boo!", "Title", 0);
 }
