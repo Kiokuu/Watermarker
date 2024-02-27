@@ -2,6 +2,9 @@
 //
 
 #include "Watermark.h"
+
+#include <iostream>
+
 #include <Windows.h>
 
 int main()
@@ -12,5 +15,6 @@ int main()
 
 __declspec(dllexport) void Watermark()
 {
-	MessageBoxA(0, "Box", "Title", 0);
+	std::cout << "Hi from watermark!" << std::endl;
+	//MessageBoxA(0, "Box", "Title", 0);
 }

@@ -5,6 +5,7 @@
 #include "zasm/program/program.hpp"
 #include "zasm/serialization/serializer.hpp"
 #include "zasm/x86/assembler.hpp"
+#include "zasm/x86/memory.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -125,3 +126,12 @@ int main(int argc, char* argv[])
 	std::cin.get();
 	return 0;
 }
+
+
+/*
+ * Rewrite imports on startup 
+ * Iterate through old import directory, what imports i need, where theey need to be written, iterate through new one, write them over.
+ * entrypoint copies the new stuff over to the old one
+ * Write DX11 hook  (watermark side)
+ *
+*/
