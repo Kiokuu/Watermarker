@@ -50,7 +50,7 @@ public:
 	{
 		for (auto& function : m_functions)
 		{
-			if (function.getName() == name)
+			if (!function.getIsOrdinal() && function.getName() == name)
 			{
 				return;
 			}
