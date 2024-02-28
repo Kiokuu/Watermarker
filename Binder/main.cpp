@@ -40,14 +40,14 @@ int main(int argc, char* argv[])
 	ExecutableFile file(argv[1]);
 
 	
-	file.addImport("Watermark.dll", "?Watermark@@YAXXZ");
+	file.addImport("Watermark.dll", "Watermark");
 	file.rewriteImports();
 
 	ImageSection* newSection;
 	file.createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &newSection);
 
 	uint32_t OEP = file.getEntryPoint();
-	uint32_t waterAddress = file.getImportAddress("Watermark.dll", "?Watermark@@YAXXZ");
+	uint32_t waterAddress = file.getImportAddress("Watermark.dll", "Watermark");
 
 	auto startLabel = program.createLabel("start");
 	assembler.bind(startLabel);
