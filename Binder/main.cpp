@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ranges>
 
 #include "Binder.h"
 #include "ExecutableFile.h"
@@ -39,7 +40,6 @@ int main(int argc, char* argv[])
 
 	ExecutableFile file(argv[1]);
 
-	
 	file.addImport("Watermark.dll", "Watermark");
 	file.rewriteImports();
 
@@ -58,11 +58,8 @@ int main(int argc, char* argv[])
 		assembler.push(reg);
 	}
 
-
 	assembler.mov(zasm::x86::rbp, zasm::x86::rsp);
-
 	assembler.call(zasm::x86::qword_ptr(zasm::x86::rip, waterAddress));
-
 	assembler.mov(zasm::x86::rsp, zasm::x86::rbp);
 
 	for(auto reg : regsToSave)
@@ -83,7 +80,13 @@ int main(int argc, char* argv[])
 
 	file.save("modified.exe");
 
+
 	/*
+	zasm::Program program(zasm::MachineMode::AMD64);
+	zasm::x86::Assembler assembler(program);
+	zasm::Serializer serializer;
+
+	ExecutableFile file(argv[1]);
 	file.addImport("USER32.dll", "MessageBoxA");
 	file.rewriteImports();
 
@@ -93,10 +96,50 @@ int main(int argc, char* argv[])
 	uint32_t OEP = file.getEntryPoint();
 	uint32_t messageAddress = file.getImportAddress("USER32.dll", "MessageBoxA");
 
+	std::vector<zasm::x86::Gp> regsToSave = { zasm::x86::rcx, zasm::x86::rdx, zasm::x86::r8, zasm::x86::r9, zasm::x86::rbp };
+
+
+
 	// Assembly program to jump to the original entry point.
 	auto startLabel = program.createLabel("start");
+	auto messageTitle = program.createLabel("MessageBoxTitle");
+	auto messageArg = program.createLabel("MessageBoxText");
+
 	assembler.bind(startLabel);
+	for (const auto& r : regsToSave)
+	{
+		assembler.push(r);
+	}
+
+	assembler.mov(zasm::x86::rbp, zasm::x86::rsp);
+	assembler.lea(zasm::x86::rsp, zasm::x86::qword_ptr(zasm::x86::rsp, -0x20));
+
+	assembler.mov(zasm::x86::rcx, zasm::Imm(0));
+	assembler.lea(zasm::x86::rdx, zasm::x86::qword_ptr(zasm::x86::rip, messageArg));
+	assembler.lea(zasm::x86::r8, zasm::x86::qword_ptr(zasm::x86::rip, messageTitle));
+	assembler.mov(zasm::x86::r9, zasm::Imm(0));
+
+	assembler.call(zasm::x86::qword_ptr(zasm::x86::rip, messageAddress));
+
+	assembler.lea(zasm::x86::rsp, zasm::x86::qword_ptr(zasm::x86::rsp, 0x20));
+
+	assembler.mov(zasm::x86::rsp, zasm::x86::rbp);
+
+	for (const auto& r : regsToSave | std::ranges::views::reverse)
+	{
+		assembler.pop(r);
+	}
+
 	assembler.jmp(zasm::Imm32(OEP));
+
+	assembler.bind(messageTitle);
+	const char* title = "kean";
+	assembler.embed(title, strlen(title) + 1);
+
+	assembler.bind(messageArg);
+	const char* message = "this product is unfortunately used by kean";
+	assembler.embed(message, strlen(message) + 1);
+
 
 
 	serializer.serialize(program, newSection->getVirtualAddress());
@@ -109,12 +152,9 @@ int main(int argc, char* argv[])
 	// Set the entry point of the executable file
 	file.setEntryPoint(newSection->getVirtualAddress());
 	
-	*/
-
-	
 	// Save the modified executable file to a new file
-	//file.save("modified.exe");
-
+	file.save("modified.exe");
+	*/
 
 	std::cin.get();
 	return 0;
