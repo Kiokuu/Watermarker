@@ -2,6 +2,9 @@
 #include <d3dcompiler.h>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "D3D11StateBlock.h"
 #include "D3D11WatermarkShader.h"
 #include "Vertex.h"
@@ -12,7 +15,7 @@ D3D11RenderHook* D3D11RenderHook::m_pInstance = nullptr;
 D3D11RenderHook::D3D11RenderHook(HWND hWnd)
     : m_hWnd(hWnd), m_originalPresent(nullptr), m_pSwapChain(nullptr), m_pDevice(nullptr), m_pContext(nullptr),
       m_pRenderTargetView(nullptr), m_pVertexShader(nullptr), m_pPixelShader(nullptr),
-      m_pInputLayout(nullptr), m_pVertexBuffer(nullptr), m_bHookInitialized(false)
+      m_pInputLayout(nullptr), m_pVertexBuffer(nullptr), m_pSamplerState(nullptr), m_pTexture(nullptr), m_bHookInitialized(false)
 {
 		Initialize();
 }
@@ -68,6 +71,67 @@ void D3D11RenderHook::InitializeD3DResources()
 
 	pBackBuffer->Release();
 
+	const char* texturePath = R"(C:\Users\Potato\Desktop\transparent_mark.png)";
+	int width, height, channels;
+	stbi_uc* pixels = stbi_load(texturePath, &width, &height, &channels, STBI_rgb_alpha);
+
+	if(!pixels)
+	{
+		printf("Failed to load texture\n");
+	}
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initDataTex = {};
+	initDataTex.pSysMem = pixels;
+	initDataTex.SysMemPitch = width * 4;
+
+	hr = m_pDevice->CreateTexture2D(&textureDesc, &initDataTex, &m_pTexture);
+	if(FAILED(hr))
+	{
+		printf("Failed to create texture\n");
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	hr = m_pDevice->CreateShaderResourceView(m_pTexture, &srvDesc, &m_pShaderResourceView);
+	if(FAILED(hr))
+	{
+		printf("Failed to create shader resource view\n");
+	}
+
+	//stbi_image_free(pixels);
+
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = m_pDevice->CreateSamplerState(&samplerDesc, &m_pSamplerState);
+	if(FAILED(hr))
+	{
+		printf("Failed to create sampler state\n");
+	}
+
 	DXGI_SWAP_CHAIN_DESC desc;
 	m_pSwapChain->GetDesc(&desc);
 	
@@ -80,10 +144,12 @@ void D3D11RenderHook::InitializeD3DResources()
 
     // Compile vertex shader
 	ID3DBlob* pVertexShaderBlob = nullptr;
-    hr = D3DCompile(vertexShaderSource, strlen(vertexShaderSource), nullptr, nullptr, nullptr, "vs_main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pVertexShaderBlob, nullptr);
+	ID3DBlob* pErrorBlob = nullptr;
+    hr = D3DCompile(vertexShaderSource, strlen(vertexShaderSource), nullptr, nullptr, nullptr, "vs_main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pVertexShaderBlob, &pErrorBlob);
     if (FAILED(hr))
     {
         printf("Failed to compile vertex shader\n");
+		printf("%s\n", (char*)pErrorBlob->GetBufferPointer());
 	}
 	
     // Create vertex shader
@@ -95,10 +161,11 @@ void D3D11RenderHook::InitializeD3DResources()
 
 	// Compile pixel shader
 	ID3DBlob* pPixelShaderBlob = nullptr;
-	hr = D3DCompile(vertexShaderSource, strlen(vertexShaderSource), nullptr, nullptr, nullptr, "ps_main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pPixelShaderBlob, nullptr);
+	hr = D3DCompile(vertexShaderSource, strlen(vertexShaderSource), nullptr, nullptr, nullptr, "ps_main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pPixelShaderBlob, &pErrorBlob);
     if (FAILED(hr))
     {
 	    printf("Failed to compile pixel shader\n");
+    	printf("%s\n", (char*)pErrorBlob->GetBufferPointer());
     }
 
 	// Create pixel shader
@@ -122,25 +189,42 @@ void D3D11RenderHook::InitializeD3DResources()
         printf("Failed to create input layout\n");
     }
 	
-    // Define vertices for a triangle
-	Vertex vertices[] =
-    {
-		{ {-1.0f, -1.0f}, {0.0f, 1.0f}}, // Bottom left
-		{ {0.0f, 1.0f},{0.5f, 0.0f }},   // Top center
-		{{ 1.0f, -1.0f},{1.0f, 1.0f}}   // Bottom right
-    };
+	UINT indexBuffer[] = {0, 1, 2, 3};
+
+	// Create vertex buffer
+	Vertex vertices[] = {
+		{{0,0}, {0, 0}}, // Bottom left
+		{{1,0}, {1,0}}, // Bottom right
+		{{0,1}, {0,1}}, // Top left
+		{{1,1}, {1,1}} // Top right
+	};
+
+	D3D11_BUFFER_DESC indexBufferDesc = {};
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(indexBuffer);
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initDataIndex = {};
+	initDataIndex.pSysMem = indexBuffer;
+
+	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &initDataIndex, &m_pIndexBuffer);
+	if (FAILED(hr))
+	{
+		printf("Failed to create index buffer\n");
+	}
 
     // Create vertex buffer
-    D3D11_BUFFER_DESC bufferDesc = {};
-    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    bufferDesc.ByteWidth = sizeof(vertices);
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
+    D3D11_BUFFER_DESC vertexBufferDesc = {};
+    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth = sizeof(vertices);
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.CPUAccessFlags = 0;
 
     D3D11_SUBRESOURCE_DATA initData = {};
     initData.pSysMem = vertices;
 
-    hr = m_pDevice->CreateBuffer(&bufferDesc, &initData, &m_pVertexBuffer);
+    hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &initData, &m_pVertexBuffer);
     if (FAILED(hr))
     {
         printf("Failed to create vertex buffer\n");
@@ -171,17 +255,21 @@ HRESULT D3D11RenderHook::RenderWatermark(IDXGISwapChain* pSwapChain, UINT SyncIn
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
 	m_pContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
+	m_pContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
 	m_pContext->IASetInputLayout(m_pInputLayout);
-    m_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	m_pContext->RSSetViewports(1, &m_vp);
+
+	m_pContext->PSSetSamplers(0, 1, &m_pSamplerState);
+	m_pContext->PSSetShaderResources(0, 1, &m_pShaderResourceView);
 
 	m_pContext->GSSetShader(nullptr, nullptr, 0);
     m_pContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
-    // Draw triangle
-    m_pContext->Draw(3, 0);
+	m_pContext->DrawIndexed(4,0,0);  
 
 	m_pStateBlock->Restore();
 

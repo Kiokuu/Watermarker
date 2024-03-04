@@ -24,6 +24,12 @@ private:
 	D3D11_PRIMITIVE_TOPOLOGY m_pPrimitiveTopology;
 
 	ID3D11Buffer* m_pVertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+	ID3D11Buffer* m_pIndexBuffer;
+
+	DXGI_FORMAT m_pIndexBufferFormat;
+	UINT m_uiOffset;
+
+
 	UINT m_pStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 	UINT m_pOffsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 
@@ -34,4 +40,7 @@ private:
 	ID3D11PixelShader* m_pPixelShader;
 	ID3D11GeometryShader* m_pGeometryShader;
 
+	ID3D11ShaderResourceView* m_pShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+
+	ID3D11SamplerState* m_pSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 };

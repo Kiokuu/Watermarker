@@ -1,6 +1,6 @@
 #include "D3D11StateBlock.h"
 
-D3D11StateBlock::D3D11StateBlock(ID3D11DeviceContext* pContext) : m_pContext(pContext), m_pRasterizerState(nullptr), m_pDepthStencilView(nullptr), m_pPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
+D3D11StateBlock::D3D11StateBlock(ID3D11DeviceContext* pContext) : m_pContext(pContext)
 {
 }
 
@@ -23,12 +23,18 @@ void D3D11StateBlock::Store()
 	m_pContext->OMGetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, m_pRenderTargetViews, &m_pDepthStencilView);
 	m_pContext->IAGetPrimitiveTopology(&m_pPrimitiveTopology);
 	m_pContext->IAGetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
+
+	m_pContext->IAGetIndexBuffer(&m_pIndexBuffer, &m_pIndexBufferFormat, &m_uiOffset);
+
 	m_pContext->IAGetInputLayout(&m_pInputLayout);
 
 	m_pContext->GSGetShader(&m_pGeometryShader, nullptr, 0);
 	m_pContext->VSGetShader(&m_pVertexShader, nullptr, 0);
 	m_pContext->PSGetShader(&m_pPixelShader, nullptr, 0);
 
+	m_pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pSamplerStates);
+
+	m_pContext->PSGetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, m_pShaderResourceViews);
 }
 
 void D3D11StateBlock::Restore()
@@ -38,12 +44,18 @@ void D3D11StateBlock::Restore()
 	m_pContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, m_pRenderTargetViews, m_pDepthStencilView);
 	m_pContext->IASetPrimitiveTopology(m_pPrimitiveTopology);
 	m_pContext->IASetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
+
+	m_pContext->IASetIndexBuffer(m_pIndexBuffer, m_pIndexBufferFormat, m_uiOffset);
+
 	m_pContext->IASetInputLayout(m_pInputLayout);
 
 	m_pContext->GSSetShader(m_pGeometryShader, nullptr, 0);
 	m_pContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
+	m_pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pSamplerStates);
+
+	m_pContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, m_pShaderResourceViews);
 	Release();
 }
 
@@ -79,6 +91,18 @@ void D3D11StateBlock::Release()
 		}
 	}
 
+	if (m_pInputLayout)
+	{
+		m_pInputLayout->Release();
+		m_pInputLayout = nullptr;
+	}
+
+	if(m_pIndexBuffer)
+	{
+		m_pIndexBuffer->Release();
+		m_pIndexBuffer = nullptr;
+	}
+
 	if (m_pGeometryShader)
 	{
 		m_pGeometryShader->Release();
@@ -96,4 +120,23 @@ void D3D11StateBlock::Release()
 		m_pPixelShader->Release();
 		m_pPixelShader = nullptr;
 	}
+
+	for (auto& m_pSamplerState : m_pSamplerStates)
+	{
+		if (m_pSamplerState)
+		{
+			m_pSamplerState->Release();
+			m_pSamplerState = nullptr;
+		}
+	}
+
+	for (auto& m_pShaderResourceView : m_pShaderResourceViews)
+	{
+		if (m_pShaderResourceView)
+		{
+			m_pShaderResourceView->Release();
+			m_pShaderResourceView = nullptr;
+		}
+	}
+
 }
