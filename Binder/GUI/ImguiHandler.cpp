@@ -1,5 +1,5 @@
 //https://github.com/ocornut/imgui/blob/master/examples/example_win32_directx11/main.cpp
-
+#define NOMINMAX
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
@@ -12,7 +12,8 @@
 #include <ostream>
 #include <tchar.h>
 
-#include "imgui_filedialog/ImGuiFileDialog.h"
+#include "ImGuiFileDialog.h"
+#include "ImguiDraw.h"
 
 
 static ImVec2 g_windowSize = ImVec2(800,600);
@@ -25,6 +26,7 @@ static ID3D11RenderTargetView*  g_mainRenderTargetView = nullptr;
 static HWND                     g_hWnd = nullptr;
 static bool 				    g_imguiInitialized = false;
 
+static ImguiDraw* g_draw = nullptr; 
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -35,6 +37,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int ImguiHandler::initialize()
 {
+    g_draw = new ImguiDraw();
 	ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"Binder", nullptr };
     RegisterClassExW(&wc);
@@ -67,25 +70,6 @@ int ImguiHandler::initialize()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-
-    /*
-	const HMONITOR monitor = MonitorFromWindow(g_hWnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO info = {};
-    info.cbSize = sizeof(MONITORINFO);
-    GetMonitorInfo(monitor, &info);
-    const int monitor_height = info.rcMonitor.bottom - info.rcMonitor.top;
-
-    if (monitor_height > 1080)
-    {
-        const float fScale = 2.0f;
-        ImFontConfig cfg;
-        cfg.SizePixels = 13 * fScale;
-        ImGui::GetIO().Fonts->AddFontDefault(&cfg);
-    }
-
-    ImGui::GetIO().IniFilename = nullptr;
-    */
-
     ImGui_ImplWin32_Init(g_hWnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
@@ -113,67 +97,12 @@ int ImguiHandler::initialize()
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        bool show_demo_window = false;
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-
         ImGui::SetNextWindowSize(g_windowSize, ImGuiCond_Once);
         ImGui::SetNextWindowBgAlpha(1.0f);
 
         // ImGui::ShowDemoWindow(0);
 
-        ImGui::Begin("Binder" , 0 , ImGuiWindowFlags_NoResize);
-
-        // This window will contain the following
-        // File picker (executable file)
-        // Text input (data to be embedded in the watermark)
-        // Button (to start the process)
-        // popups in case of errors
-
-		// File picker
-        if(ImGui::Button("Select File"))
-        {
-	        IGFD::FileDialogConfig config;
-            config.path = ".";
-            config.countSelectionMax = 1;
-            config.flags = ImGuiFileDialogFlags_Modal;
-
-            std::cout << "Opening file dialog" << std::endl;
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".exe", config);
-        }
-    	ImVec2 maxSize = g_windowSize;  // The full display area
-    	ImVec2 minSize = {g_windowSize.x * 0.5f, g_windowSize.y * 0.5f };  // Half the display area
-
-    	if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", 0, minSize, maxSize)) {
-
-		    if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
-		    	std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-		    	std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-
-                std::cout << "Selected file: " << filePathName << std::endl;
-		    }
-            else
-            {
-            	std::cout << "Cancelled" << std::endl;
-            }
-		    
-		    // close
-		    ImGuiFileDialog::Instance()->Close();
-        }
-
-        // Text input
-        static char text[1024] = "";
-        ImGui::InputText("Watermark", text, IM_ARRAYSIZE(text));
-
-        // Button
-        if(ImGui::Button("Embed Watermark"))
-        {
-        	std::cout << "Embedding watermark" << std::endl;
-		}
-
-		ImGui::End();
+        g_draw->Draw();
         
         // Rendering
         ImGui::Render();
