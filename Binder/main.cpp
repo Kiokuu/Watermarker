@@ -8,6 +8,8 @@
 #include "zasm/x86/assembler.hpp"
 #include "zasm/x86/memory.hpp"
 
+#include "ImguiHandler.h"
+
 int main(int argc, char* argv[])
 {
 	for (int i = 0; i < argc; i++)
@@ -33,6 +35,12 @@ int main(int argc, char* argv[])
 
 	Binder binder(&originalExecutable, &targetExecutable);
 	*/
+
+	
+	ImguiHandler imguiHandler;
+	imguiHandler.initialize();
+
+
 
 	zasm::Program program(zasm::MachineMode::AMD64);
 	zasm::x86::Assembler assembler(program);
