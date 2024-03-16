@@ -10,7 +10,7 @@
 #include "zasm/x86/assembler.hpp"
 #include "zasm/x86/memory.hpp"
 
-Binder::Binder(): m_executable(nullptr), m_watermarkData(nullptr), m_watermarkSize(0), m_program(zasm::MachineMode::AMD64), m_assembler(m_program), m_serializer()
+Binder::Binder(): m_executable(nullptr), m_program(zasm::MachineMode::AMD64), m_assembler(m_program), m_serializer()
 {
 }
 
@@ -18,7 +18,7 @@ bool Binder::bind(std::string_view path)
 {
 	m_executablePath = path;
 
-	if(!loadExecutable())
+	if (!loadExecutable())
 	{
 		return false;
 	}
@@ -49,8 +49,9 @@ bool Binder::writeAssembly(std::string_view watermark)
 	m_executable->rewriteImports();
 
 	ImageSection* watermarkSection;
-	
-	m_executable->createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE, &watermarkSection);
+
+	m_executable->createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE,
+	                            &watermarkSection);
 
 	uint32_t OEP = m_executable->getEntryPoint();
 	uint32_t waterAddress = m_executable->getImportAddress("Watermark.dll", "Watermark");
@@ -58,17 +59,19 @@ bool Binder::writeAssembly(std::string_view watermark)
 	auto startLabel = m_program.createLabel("start");
 	m_assembler.bind(startLabel);
 
-	std::vector<zasm::x86::Gp> regsToSave = { zasm::x86::rcx, zasm::x86::rdx, zasm::x86::r8, zasm::x86::r9, zasm::x86::rbp };
-	for(auto reg : regsToSave)
+	std::vector<zasm::x86::Gp> regsToSave = {
+		zasm::x86::rcx, zasm::x86::rdx, zasm::x86::r8, zasm::x86::r9, zasm::x86::rbp
+	};
+	for (auto reg : regsToSave)
 	{
 		m_assembler.push(reg);
 	}
 
 	m_assembler.mov(zasm::x86::rbp, zasm::x86::rsp);
-	m_assembler.call(zasm::x86::qword_ptr(zasm::x86::rip, waterAddress));
+	m_assembler.call(qword_ptr(zasm::x86::rip, waterAddress));
 	m_assembler.mov(zasm::x86::rsp, zasm::x86::rbp);
 
-	for(auto reg : regsToSave)
+	for (auto reg : regsToSave)
 	{
 		m_assembler.pop(reg);
 	}
@@ -84,7 +87,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 
 	zasm::Error err = m_serializer.serialize(m_program, watermarkSection->getVirtualAddress());
 
-	if(err != zasm::Error::None)
+	if (err != zasm::Error::None)
 	{
 		std::cerr << "Failed to serialize assembly: " << "\n";
 		return false;
@@ -101,7 +104,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 
 bool Binder::save(std::string_view path, std::string_view watermark)
 {
-	if(m_executable == nullptr)
+	if (m_executable == nullptr)
 	{
 		return false;
 	}
