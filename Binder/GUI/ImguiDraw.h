@@ -12,6 +12,7 @@ private:
 	std::string m_errorMsg;
 	bool m_error;
 
+	void setError(std::string msg);
 	bool attemptBind(std::string path);
 
 };

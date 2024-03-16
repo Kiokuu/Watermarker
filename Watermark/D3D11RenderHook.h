@@ -3,6 +3,7 @@
 
 #include "D3D11StateBlock.h"
 #include "MinHook.h"
+#include "CImg/CImg.h"
 
 
 template <typename T>
@@ -61,6 +62,8 @@ private:
     ID3D11ShaderResourceView* m_pShaderResourceView;
 
     D3D11_VIEWPORT m_vp;
+
+    cimg_library::CImg<unsigned char>* m_watermark;
 
     bool m_bHookInitialized;
 };

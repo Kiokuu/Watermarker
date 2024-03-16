@@ -5,6 +5,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "CImg/CImg.h"
+
 #include "D3D11StateBlock.h"
 #include "D3D11WatermarkShader.h"
 #include "Vertex.h"
@@ -71,6 +73,64 @@ void D3D11RenderHook::InitializeD3DResources()
 
 	pBackBuffer->Release();
 
+	const char* testText = "banana";
+	int width = 128;
+	int height = 128;
+	int channels = 3;
+
+	m_watermark = new cimg_library::CImg<unsigned char>(width, height, 1, channels, 0);
+
+	const unsigned char color[] = {255, 0, 0}; // Red color with full opacity
+
+	// Draw the text at the center
+	m_watermark->draw_text(width/2, height/2, testText, color, 0, 1, 13);
+
+	// Create a rotated repeating pattern
+	//m_watermark->rotate(45); // Rotate the texture by 45 degrees
+
+	// Get the pixel data of the image
+	unsigned char* pixels = m_watermark->data();
+
+
+	// Add another channel for alpha to the pixel data
+	unsigned char* newPixels = new unsigned char[width * height * 4];
+
+	// Fill the newpixel data with the original, if the pixel is 0,0,0, set the alpha to 0, otherwise set it to 255
+	for(int i = 0; i < width * height; i++)
+	{
+	    newPixels[i * 4] = pixels[i * 3];
+	    newPixels[i * 4 + 1] = pixels[i * 3 + 1];
+	    newPixels[i * 4 + 2] = pixels[i * 3 + 2];
+	    newPixels[i * 4 + 3] = (pixels[i * 3] == 0 && pixels[i * 3 + 1] == 0 && pixels[i * 3 + 2] == 0) ? 0 : 255;
+	}
+
+	// Save the image to a file
+	m_watermark->save_bmp("watermark.bmp");
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initDataTex = {};
+	initDataTex.pSysMem = newPixels;
+	initDataTex.SysMemPitch = width * 4;
+
+	hr = m_pDevice->CreateTexture2D(&textureDesc, &initDataTex, &m_pTexture);
+	if(FAILED(hr))
+	{
+		printf("Failed to create texture\n");
+	}
+
+	/*
 	const char* texturePath = R"(C:\Users\Potato\Desktop\transparent_mark.png)";
 	int width, height, channels;
 	stbi_uc* pixels = stbi_load(texturePath, &width, &height, &channels, STBI_rgb_alpha);
@@ -102,6 +162,9 @@ void D3D11RenderHook::InitializeD3DResources()
 	{
 		printf("Failed to create texture\n");
 	}
+	*/
+
+
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = textureDesc.Format;

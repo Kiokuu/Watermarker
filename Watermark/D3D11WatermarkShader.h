@@ -1,5 +1,8 @@
 #pragma once
 
+/**
+ * @brief Stores the vertex shader source code (HLSL)
+ */
 const char* vertexShaderSource = R"(
 	Texture2D _texture;
 	SamplerState _sampler;
@@ -26,6 +29,9 @@ const char* vertexShaderSource = R"(
 	}
 
 	float4 ps_main(vs_out input) : SV_TARGET {
-	  return _texture.Sample(_sampler, input.uv);
+	  float4 texColor = _texture.Sample(_sampler, input.uv);
+	  // Apply alpha blending if the texture contains an alpha channel
+	  float alpha = texColor.a;
+	  return float4(texColor.rgb * alpha, alpha);
 	}
 )";
