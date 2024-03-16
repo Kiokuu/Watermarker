@@ -29,9 +29,6 @@ const char* vertexShaderSource = R"(
 	}
 
 	float4 ps_main(vs_out input) : SV_TARGET {
-	  float4 texColor = _texture.Sample(_sampler, input.uv);
-	  // Apply alpha blending if the texture contains an alpha channel
-	  float alpha = texColor.a;
-	  return float4(texColor.rgb * alpha, alpha);
+	  return _texture.Sample(_sampler, input.uv);
 	}
 )";
