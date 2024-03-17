@@ -21,6 +21,8 @@ void D3D11StateBlock::Store()
 	UINT numViewPorts = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX;
 	m_pContext->RSGetViewports(&numViewPorts, m_pViewPorts);
 	m_pContext->OMGetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, m_pRenderTargetViews, &m_pDepthStencilView);
+	m_pContext->OMGetBlendState(&m_pBlendState, m_blendFactor, &m_blendSampleMask);
+
 	m_pContext->IAGetPrimitiveTopology(&m_pPrimitiveTopology);
 	m_pContext->IAGetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
 
@@ -42,6 +44,8 @@ void D3D11StateBlock::Restore()
 	m_pContext->RSSetState(m_pRasterizerState);
 	m_pContext->RSSetViewports(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX, m_pViewPorts);
 	m_pContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, m_pRenderTargetViews, m_pDepthStencilView);
+	m_pContext->OMSetBlendState(m_pBlendState, m_blendFactor, m_blendSampleMask);
+
 	m_pContext->IASetPrimitiveTopology(m_pPrimitiveTopology);
 	m_pContext->IASetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
 
@@ -137,6 +141,12 @@ void D3D11StateBlock::Release()
 			m_pShaderResourceView->Release();
 			m_pShaderResourceView = nullptr;
 		}
+	}
+
+	if (m_pBlendState)
+	{
+		m_pBlendState->Release();
+		m_pBlendState = nullptr;
 	}
 
 }

@@ -10,45 +10,43 @@
 
 bool __stdcall DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-    return true;
+	return true;
 }
 
 D3D11RenderHook* g_pRenderHook = nullptr;
 
-extern "C" __declspec(dllexport) void Watermark()
+extern "C" __declspec(dllexport) void Watermark(const char* watermark_data)
 {
 	AllocConsole();
 	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
 
 	WNDCLASS wnd;
-	wnd.style         = CS_HREDRAW | CS_VREDRAW;
-	wnd.lpfnWndProc   = DefWindowProc;
-	wnd.cbClsExtra    = 0;
-	wnd.cbWndExtra    = 0;
-	wnd.hInstance     = GetModuleHandle(NULL);
-	wnd.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-	wnd.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	wnd.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	wnd.lpszMenuName  = NULL;
+	wnd.style = CS_HREDRAW | CS_VREDRAW;
+	wnd.lpfnWndProc = DefWindowProc;
+	wnd.cbClsExtra = 0;
+	wnd.cbWndExtra = 0;
+	wnd.hInstance = GetModuleHandle(nullptr);
+	wnd.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+	wnd.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wnd.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
+	wnd.lpszMenuName = nullptr;
 	wnd.lpszClassName = "Watermark";
 
-	if(!RegisterClass(&wnd))
+	if (!RegisterClass(&wnd))
 	{
-		MessageBoxA(0, "Failed to register window class", "Error", 0);
+		MessageBoxA(nullptr, "Failed to register window class", "Error", 0);
 		return;
 	}
 
 	HWND hWnd = CreateWindow("Watermark", "Watermark", WS_OVERLAPPEDWINDOW, 0, 0, 800, 600, NULL, NULL, NULL, NULL);
-	if(hWnd == NULL)
+	if (hWnd == nullptr)
 	{
-		MessageBoxA(0, "Failed to create window", "Error", 0);
+		MessageBoxA(nullptr, "Failed to create window", "Error", 0);
 		return;
 	}
 
-	g_pRenderHook = new D3D11RenderHook(hWnd);
+	g_pRenderHook = new D3D11RenderHook(hWnd, watermark_data);
 
 	DestroyWindow(hWnd);
-	UnregisterClass("Watermark", GetModuleHandle(NULL));
+	UnregisterClass("Watermark", GetModuleHandle(nullptr));
 }
-
-

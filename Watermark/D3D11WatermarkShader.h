@@ -22,13 +22,14 @@ const char* vertexShaderSource = R"(
 	};
 
 	vs_out vs_main(vs_in input) {
-	  vs_out output = (vs_out)0;
-	  output.position_clip = pos_to_screenspace(input.position_local);
-	  output.uv = input.uv;
-	  return output;
+		vs_out output = (vs_out)0;
+		output.position_clip = pos_to_screenspace(input.position_local);
+		output.uv = input.uv;
+		return output;
 	}
 
 	float4 ps_main(vs_out input) : SV_TARGET {
-	  return _texture.Sample(_sampler, input.uv);
+		float4 texColor = _texture.Sample(_sampler, input.uv);
+		return float4(texColor.rgb, texColor.a * 0.02);
 	}
 )";

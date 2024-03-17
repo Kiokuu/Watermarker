@@ -5,8 +5,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <vector>
 
-#include "stb_image.h"
-
 #include "CImg/CImg.h"
 
 #include "D3D11StateBlock.h"
@@ -16,8 +14,9 @@
 
 D3D11RenderHook* D3D11RenderHook::m_pInstance = nullptr;
 
-D3D11RenderHook::D3D11RenderHook(HWND hWnd)
-	: m_hWnd(hWnd), m_originalPresent(nullptr), m_pSwapChain(nullptr), m_pDevice(nullptr), m_pContext(nullptr),
+D3D11RenderHook::D3D11RenderHook(HWND hWnd, const char* watermark_data)
+	: m_hWnd(hWnd), m_watermarkData(watermark_data), m_originalPresent(nullptr), m_pSwapChain(nullptr),
+	  m_pDevice(nullptr), m_pContext(nullptr),
 	  m_pRenderTargetView(nullptr), m_pVertexShader(nullptr), m_pPixelShader(nullptr),
 	  m_pInputLayout(nullptr), m_pVertexBuffer(nullptr), m_pSamplerState(nullptr), m_pTexture(nullptr),
 	  m_bHookInitialized(false)
@@ -82,16 +81,16 @@ void D3D11RenderHook::InitializeD3DResources()
 	DXGI_SWAP_CHAIN_DESC desc;
 	m_pSwapChain->GetDesc(&desc);
 
-	auto testText = "banana";
+	auto testText = m_watermarkData.c_str();
 	int width = desc.BufferDesc.Width; // Adjust width to screen resolution
 	int height = desc.BufferDesc.Height; // Adjust height to screen resolution
 
-	int fontHeight = 13 * (height / 1080);
+	int fontHeight = 13 * (height / 760.0f);
 
 	// Create a transparent background image
 	cimg_library::CImg<unsigned char> watermark(width, height, 1, 4, 0);
 
-	constexpr unsigned char red[] = {255, 0, 0, 255}; // Red color with full opacity
+	constexpr unsigned char white[] = {255, 255, 255, 255};
 
 	// Calculate the number of repetitions horizontally and vertically
 	int numRepetitionsX = (width + 100) / 100; // Adjust repetition width to text width
@@ -102,9 +101,10 @@ void D3D11RenderHook::InitializeD3DResources()
 	{
 		for (int x = 0; x < numRepetitionsX; ++x)
 		{
-			watermark.draw_text(x * 100, y * 20, testText, red, 0, 1, fontHeight); // Adjust position and font size
+			watermark.draw_text(x * 100, y * 20, testText, white, 0, 1, fontHeight); // Adjust position and font size
 		}
 	}
+
 	//watermark.rotate(45); // Rotate the texture by 45 degrees
 
 	// Get the pixel data of the image
@@ -153,39 +153,25 @@ void D3D11RenderHook::InitializeD3DResources()
 		printf("Failed to create texture\n");
 	}
 
-	/*
-	const char* texturePath = R"(C:\Users\Potato\Desktop\transparent_mark.png)";
-	int width, height, channels;
-	stbi_uc* pixels = stbi_load(texturePath, &width, &height, &channels, STBI_rgb_alpha);
 
-	if(!pixels)
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	hr = m_pDevice->CreateBlendState(&blendDesc, &m_pBlendState);
+	if (FAILED(hr))
 	{
-		printf("Failed to load texture\n");
+		printf("Failed to create blend state\n");
 	}
-
-	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = width;
-	textureDesc.Height = height;
-	textureDesc.MipLevels = 1;
-	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA initDataTex = {};
-	initDataTex.pSysMem = pixels;
-	initDataTex.SysMemPitch = width * 4;
-
-	hr = m_pDevice->CreateTexture2D(&textureDesc, &initDataTex, &m_pTexture);
-	if(FAILED(hr))
-	{
-		printf("Failed to create texture\n");
-	}
-	*/
 
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -336,7 +322,7 @@ HRESULT D3D11RenderHook::RenderWatermark(IDXGISwapChain* pSwapChain, UINT SyncIn
 	m_pStateBlock->Store();
 
 	m_pContext->OMSetRenderTargets(1, &m_pRenderTargetView, nullptr);
-
+	m_pContext->OMSetBlendState(m_pBlendState, nullptr, 0xffffffff);
 
 	// Set vertex buffer
 	UINT stride = sizeof(Vertex);

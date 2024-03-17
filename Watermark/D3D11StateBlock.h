@@ -42,5 +42,9 @@ private:
 
 	ID3D11ShaderResourceView* m_pShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
 
+	ID3D11BlendState* m_pBlendState;
+	UINT m_blendSampleMask;
+	float m_blendFactor[4];
+
 	ID3D11SamplerState* m_pSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 };

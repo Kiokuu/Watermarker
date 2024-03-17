@@ -57,6 +57,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 	uint32_t waterAddress = m_executable->getImportAddress("Watermark.dll", "Watermark");
 
 	auto startLabel = m_program.createLabel("start");
+	auto watermarkLabel = m_program.createLabel("watermark");
 	m_assembler.bind(startLabel);
 
 	std::vector<zasm::x86::Gp> regsToSave = {
@@ -68,6 +69,9 @@ bool Binder::writeAssembly(std::string_view watermark)
 	}
 
 	m_assembler.mov(zasm::x86::rbp, zasm::x86::rsp);
+
+	m_assembler.lea(zasm::x86::rcx, qword_ptr(zasm::x86::rip, watermarkLabel));
+
 	m_assembler.call(qword_ptr(zasm::x86::rip, waterAddress));
 	m_assembler.mov(zasm::x86::rsp, zasm::x86::rbp);
 
@@ -78,7 +82,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 
 	m_assembler.jmp(zasm::Imm32(OEP));
 
-	auto watermarkLabel = m_program.createLabel("watermark");
+	
 	m_assembler.bind(watermarkLabel);
 
 	// Write the watermark to the new section as data
