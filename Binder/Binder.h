@@ -25,11 +25,11 @@ public:
 
 	/**
 	 * @brief Saves the executable file with the bound watermark.
-	 * @param path The path to save the executable file.
+	 * @param name The path to save the executable file.
 	 * @param watermark The watermark to bind.
 	 * @return True if the file was successfully saved, false otherwise.
 	 */
-	bool save(std::string_view path, std::string_view watermark);
+	bool save(std::string_view name, std::string_view watermark);
 
 	/**
 	 * @brief Checks if the Binder is ready to bind a watermark.

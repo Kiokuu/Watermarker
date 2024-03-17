@@ -3,8 +3,10 @@
 #include "Binder.h"
 
 #include <iostream>
-#include <zasm/formatter/formatter.hpp>
+#include <filesystem>
 
+
+#include <zasm/formatter/formatter.hpp>
 #include "zasm/base/mode.hpp"
 #include "zasm/serialization/serializer.hpp"
 #include "zasm/x86/assembler.hpp"
@@ -106,16 +108,36 @@ bool Binder::writeAssembly(std::string_view watermark)
 	return true;
 }
 
-bool Binder::save(std::string_view path, std::string_view watermark)
+bool Binder::save(std::string_view name, std::string_view watermark)
 {
 	if (m_executable == nullptr)
 	{
 		return false;
 	}
 
-	writeAssembly(watermark);
-	m_executable->save(path);
+	// Get the executablePath parent directory
+	std::filesystem::path parentPath = std::filesystem::path(m_executablePath).parent_path();
 
+	// Create a path with parent path + name
+	
+
+	writeAssembly(watermark);
+	m_executable->save(parentPath.string() + "\\" + name.data());
+
+	// Check if watermark.dll is in the current directory (not the executable directory)
+	std::filesystem::path watermarkPath = std::filesystem::current_path() / "Watermark.dll";
+
+	if (!std::filesystem::exists(watermarkPath))
+	{
+		std::cerr << "Watermark.dll not found in current directory\n";
+		return false;
+	}
+
+	// Copy the watermark.dll to the executable directory
+	std::filesystem::copy(watermarkPath, parentPath.string() + "\\" + "Watermark.dll", std::filesystem::copy_options::overwrite_existing);
+
+	delete m_executable;
 	m_executable = nullptr;
+
 	return true;
 }

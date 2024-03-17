@@ -3,13 +3,14 @@
 #include "imgui.h"
 #include "ImGuiFileDialog.h"
 
+
 static ImVec2 g_windowSize;
 
-ImguiDraw::ImguiDraw() : m_binder(new Binder()), m_errorMsg(""), m_error(false)
+ImguiDraw::ImguiDraw() : m_binder(new Binder())
 {
 }
 
-void ImguiDraw::Draw()
+void ImguiDraw::draw()
 {
 	ImGui::Begin("Binder", nullptr, ImGuiWindowFlags_NoResize);
 
@@ -36,22 +37,17 @@ void ImguiDraw::Draw()
 	{
 		if (!ImGuiFileDialog::Instance()->IsOk())
 		{
-			// action if OK
-			m_error = true;
-			m_errorMsg = "Failed to select file";
+			setError("Failed to select file");
 		}
 
 		std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-
 		std::cout << "Selected file: " << filePathName << std::endl;
 
 		if (!attemptBind(filePathName))
 		{
-			m_error = true;
-			m_errorMsg = "Failed to bind file";
+			setError("Failed to bind file");
 		}
 
-		// close
 		ImGuiFileDialog::Instance()->Close();
 	}
 
@@ -62,43 +58,88 @@ void ImguiDraw::Draw()
 	// Button
 	if (ImGui::Button("Embed Watermark"))
 	{
-		std::cout << "Embedding watermark" << std::endl;
-
-		if (!m_binder->isReadyToBind())
-		{
-			m_error = true;
-			m_errorMsg = "No file selected";
-		}
-		else
-		{
-			if (!m_binder->save("output.exe", text))
-			{
-				m_error = true;
-				m_errorMsg = "Failed to save file";
-			}
-		}
+		embedWatermark(text);
 	}
 
-	if (m_error)
-	{
-		ImGui::OpenPopup("Error");
-		m_error = false;
-	}
+	displayErrorPopup();
+	displaySuccessPopup();
 
-	if (ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text(m_errorMsg.c_str());
-		if (ImGui::Button("OK"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
 	ImGui::End();
 }
 
-
-bool ImguiDraw::attemptBind(std::string path)
+void ImguiDraw::setError(const std::string& msg)
 {
-	return m_binder->bind(path);
+	m_errorMsg = msg;
+}
+
+void ImguiDraw::setSuccess(const std::string& msg)
+{
+	m_successMsg = msg;
+}
+
+bool ImguiDraw::attemptBind(const std::string& path)
+{
+	if (m_binder->bind(path))
+	{
+		return true;
+	}
+	setError("Failed to bind file");
+	return false;
+}
+
+void ImguiDraw::embedWatermark(const std::string& watermarkText)
+{
+	std::cout << "Embedding watermark\n";
+
+	if (!m_binder->isReadyToBind())
+	{
+		setError("No file selected");
+	}
+	else
+	{
+		if (!m_binder->save("output.exe", watermarkText))
+		{
+			setError("Failed to save file");
+		}
+		else
+		{
+			setSuccess("Successfully added watermark.\nOutput folder contains output.exe and watermark.dll");
+		}
+	}
+}
+
+void ImguiDraw::displayErrorPopup()
+{
+	if (!m_errorMsg.empty())
+	{
+		ImGui::OpenPopup("Error");
+		if (ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text(m_errorMsg.c_str());
+			if (ImGui::Button("OK"))
+			{
+				ImGui::CloseCurrentPopup();
+				m_errorMsg.clear();
+			}
+			ImGui::EndPopup();
+		}
+	}
+}
+
+void ImguiDraw::displaySuccessPopup()
+{
+	if (!m_successMsg.empty())
+	{
+		ImGui::OpenPopup("Success");
+		if (ImGui::BeginPopupModal("Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text(m_successMsg.c_str());
+			if (ImGui::Button("OK"))
+			{
+				ImGui::CloseCurrentPopup();
+				m_successMsg.clear();
+			}
+			ImGui::EndPopup();
+		}
+	}
 }

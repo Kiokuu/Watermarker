@@ -107,7 +107,7 @@ int ImguiHandler::initialize()
 
 		// ImGui::ShowDemoWindow(0);
 
-		g_draw->Draw();
+		g_draw->draw();
 
 		// Rendering
 		ImGui::Render();
