@@ -15,6 +15,10 @@ bool __stdcall DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
 
 D3D11RenderHook* g_pRenderHook = nullptr;
 
+/*
+ * @brief Entry point for the watermark DLL.
+ * @param watermark_data The watermark text to render.
+*/
 extern "C" __declspec(dllexport) void Watermark(const char* watermark_data)
 {
 	AllocConsole();

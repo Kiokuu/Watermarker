@@ -82,7 +82,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 
 	m_assembler.jmp(zasm::Imm32(OEP));
 
-	
+
 	m_assembler.bind(watermarkLabel);
 
 	// Write the watermark to the new section as data

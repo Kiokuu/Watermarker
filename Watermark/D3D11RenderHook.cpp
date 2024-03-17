@@ -81,8 +81,8 @@ void D3D11RenderHook::InitializeD3DResources()
 	m_pSwapChain->GetDesc(&desc);
 
 	auto testText = m_watermarkData.c_str();
-	int width = desc.BufferDesc.Width; // Adjust width to screen resolution
-	int height = desc.BufferDesc.Height; // Adjust height to screen resolution
+	int width = desc.BufferDesc.Width;
+	int height = desc.BufferDesc.Height;
 
 	int fontHeight = 13 * (height / 760.0f);
 
@@ -91,7 +91,6 @@ void D3D11RenderHook::InitializeD3DResources()
 
 	constexpr unsigned char white[] = {255, 255, 255, 255};
 
-	// Calculate the number of repetitions horizontally and vertically
 	int numRepetitionsX = (width + 100) / 100; // Adjust repetition width to text width
 	int numRepetitionsY = (height + 20) / 20; // Adjust repetition height to text height
 
@@ -100,17 +99,17 @@ void D3D11RenderHook::InitializeD3DResources()
 	{
 		for (int x = 0; x < numRepetitionsX; ++x)
 		{
-			watermark.draw_text(x * 100, y * 20, testText, white, 0, 1, fontHeight); // Adjust position and font size
+			watermark.draw_text(x * 100, y * 20, testText, white, 0, 1, fontHeight);
 		}
 	}
 
-	//watermark.rotate(45); // Rotate the texture by 45 degrees
+	//watermark.rotate(45); // Rotate the texture by 45 degrees, need to make the image bigger for this to work........
 
 	// Get the pixel data of the image
 	unsigned char* pixels = watermark.data();
 
 
-	std::vector<unsigned char> interleavedPixels(width * height * 4); // Assuming 4 bytes per pixel (R8G8B8A8_UNORM)
+	std::vector<unsigned char> interleavedPixels(width * height * 4);
 	for (int i = 0; i < width * height; ++i)
 	{
 		interleavedPixels[i * 4] = pixels[i]; // R channel
@@ -184,9 +183,6 @@ void D3D11RenderHook::InitializeD3DResources()
 	{
 		printf("Failed to create shader resource view\n");
 	}
-
-	//stbi_image_free(pixels);
-
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
