@@ -41,10 +41,10 @@ void PDBFile::initializeCOM()
 void PDBFile::loadDataFromPDB(std::string_view path)
 {
 	HRESULT hr = CoCreateInstance(CLSID_DiaSource,
-                               nullptr,
-                               CLSCTX_INPROC_SERVER,
-                               __uuidof(IDiaDataSource),
-                               (void**)&m_pSource);
+	                              nullptr,
+	                              CLSCTX_INPROC_SERVER,
+	                              __uuidof(IDiaDataSource),
+	                              (void**)&m_pSource);
 
 	if (FAILED(hr))
 	{
@@ -119,8 +119,6 @@ void PDBFile::processSymbol(const CComPtr<IDiaSymbol>& pSymbol)
 	std::string filteredName = std::regex_replace(symbolName, nameRegex, "") + "_" + std::to_string(
 		m_executableFile->getHash() * rva); // Add hash to avoid name collisions
 
-	
-
 
 	uint64_t len = getLength(pSymbol);
 	DWORD type = 0;
@@ -136,45 +134,45 @@ void PDBFile::processSymbol(const CComPtr<IDiaSymbol>& pSymbol)
 	// table of enums
 
 
-
-	std::cout << "Symbol: " << filteredName << " (0x" << std::hex << rva << ")" << std::dec << " (len: 0x" << std::hex << len << std::dec << ")" << " (type: " << symTag << ")" << "\n";
+	std::cout << "Symbol: " << filteredName << " (0x" << std::hex << rva << ")" << std::dec << " (len: 0x" << std::hex
+		<< len << std::dec << ")" << " (type: " << symTag << ")" << "\n";
 
 	BOOL isFunction = false;
 
-	switch(symTag)
+	switch (symTag)
 	{
-		case SymTagFunction:
-			m_symbols[rva] = {filteredName, len, SymbolType::Function};
-			break;
-		case SymTagData:
-			m_symbols[rva] = {filteredName, len, SymbolType::Data};
-			break;
-		case SymTagPublicSymbol:
-			if(m_symbols.contains(rva))
+	case SymTagFunction:
+		m_symbols[rva] = {filteredName, len, SymbolType::Function};
+		break;
+	case SymTagData:
+		m_symbols[rva] = {filteredName, len, SymbolType::Data};
+		break;
+	case SymTagPublicSymbol:
+		if (m_symbols.contains(rva))
+		{
+			m_symbols[rva].setPublic(true);
+		}
+		else
+		{
+			// It may be a function or code...?
+			pSymbol->get_function(&isFunction);
+			if (isFunction)
 			{
-				m_symbols[rva].setPublic(true);
+				m_symbols[rva] = {filteredName, len, SymbolType::Function, true};
 			}
 			else
 			{
-				// It may be a function or code...?
-				pSymbol->get_function(&isFunction);
-				if(isFunction)
-				{
-					m_symbols[rva] = {filteredName, len, SymbolType::Function, true};
-				}
-				else
-				{
-					m_symbols[rva] = {filteredName, len, SymbolType::Data, true};
-				}
+				m_symbols[rva] = {filteredName, len, SymbolType::Data, true};
 			}
-			break;
-		case SymTagLabel:
-			m_symbols[rva] = {filteredName, len, SymbolType::Label};
-			break;
-		case SymTagCompiland:
-			break;
-		default:
-			break;
+		}
+		break;
+	case SymTagLabel:
+		m_symbols[rva] = {filteredName, len, SymbolType::Label};
+		break;
+	case SymTagCompiland:
+		break;
+	default:
+		break;
 	}
 
 	SysFreeString(name);
@@ -186,27 +184,27 @@ size_t PDBFile::getLength(const CComPtr<IDiaSymbol>& pSymbol)
 	pSymbol->get_symTag(&symTag);
 	uint64_t len = 0;
 
-	if(symTag == SymTagData)
+	if (symTag == SymTagData)
 	{
 		IDiaSymbol* pType;
 
-		if(SUCCEEDED(pSymbol->get_type(&pType)))
+		if (SUCCEEDED(pSymbol->get_type(&pType)))
 		{
 			pType->get_length(&len);
 		}
 		else
 		{
-			if(FAILED(pSymbol->get_length(&len)))
+			if (FAILED(pSymbol->get_length(&len)))
 			{
 				len = 0;
 			}
 		}
-		
+
 		pType->Release();
 	}
 	else
 	{
-		if(FAILED(pSymbol->get_length(&len)))
+		if (FAILED(pSymbol->get_length(&len)))
 		{
 			len = 0;
 		}
@@ -217,13 +215,10 @@ size_t PDBFile::getLength(const CComPtr<IDiaSymbol>& pSymbol)
 
 bool PDBFile::getSymbol(uint64_t address, Symbol* outSymbol) const
 {
-	if(m_symbols.contains(address))
+	if (m_symbols.contains(address))
 	{
 		*outSymbol = m_symbols.at(address);
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }

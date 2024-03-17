@@ -22,6 +22,7 @@ class Symbol
 {
 public:
 	Symbol() = default;
+
 	Symbol(std::string_view name, size_t length, SymbolType type, bool isPublic = false)
 		: m_name(name), m_length(length), m_type(type), m_isPublic(isPublic)
 	{
@@ -76,5 +77,3 @@ private:
 	CComPtr<IDiaSession> m_pSession;
 	CComPtr<IDiaSymbol> m_pGlobal;
 };
-
-

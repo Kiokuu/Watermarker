@@ -24,15 +24,16 @@ void D3D11StateBlock::Store()
 	m_pContext->OMGetBlendState(&m_pBlendState, m_blendFactor, &m_blendSampleMask);
 
 	m_pContext->IAGetPrimitiveTopology(&m_pPrimitiveTopology);
-	m_pContext->IAGetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
+	m_pContext->IAGetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides,
+	                               m_pOffsets);
 
 	m_pContext->IAGetIndexBuffer(&m_pIndexBuffer, &m_pIndexBufferFormat, &m_uiOffset);
 
 	m_pContext->IAGetInputLayout(&m_pInputLayout);
 
-	m_pContext->GSGetShader(&m_pGeometryShader, nullptr, 0);
-	m_pContext->VSGetShader(&m_pVertexShader, nullptr, 0);
-	m_pContext->PSGetShader(&m_pPixelShader, nullptr, 0);
+	m_pContext->GSGetShader(&m_pGeometryShader, nullptr, nullptr);
+	m_pContext->VSGetShader(&m_pVertexShader, nullptr, nullptr);
+	m_pContext->PSGetShader(&m_pPixelShader, nullptr, nullptr);
 
 	m_pContext->PSGetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, m_pSamplerStates);
 
@@ -47,7 +48,8 @@ void D3D11StateBlock::Restore()
 	m_pContext->OMSetBlendState(m_pBlendState, m_blendFactor, m_blendSampleMask);
 
 	m_pContext->IASetPrimitiveTopology(m_pPrimitiveTopology);
-	m_pContext->IASetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides, m_pOffsets);
+	m_pContext->IASetVertexBuffers(0, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT, m_pVertexBuffers, m_pStrides,
+	                               m_pOffsets);
 
 	m_pContext->IASetIndexBuffer(m_pIndexBuffer, m_pIndexBufferFormat, m_uiOffset);
 
@@ -101,7 +103,7 @@ void D3D11StateBlock::Release()
 		m_pInputLayout = nullptr;
 	}
 
-	if(m_pIndexBuffer)
+	if (m_pIndexBuffer)
 	{
 		m_pIndexBuffer->Release();
 		m_pIndexBuffer = nullptr;
@@ -148,5 +150,4 @@ void D3D11StateBlock::Release()
 		m_pBlendState->Release();
 		m_pBlendState = nullptr;
 	}
-
 }

@@ -4,6 +4,6 @@ class ImguiHandler
 {
 public:
 	int initialize();
-private:
 
+private:
 };

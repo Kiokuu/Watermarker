@@ -2,7 +2,6 @@
 #include <d3dcompiler.h>
 #include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <vector>
 
 #include "CImg/CImg.h"

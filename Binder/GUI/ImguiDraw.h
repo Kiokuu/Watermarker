@@ -14,5 +14,4 @@ private:
 
 	void setError(std::string msg);
 	bool attemptBind(std::string path);
-
 };

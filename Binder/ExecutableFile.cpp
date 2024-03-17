@@ -143,7 +143,7 @@ void ExecutableFile::save(std::string_view savePath)
 	// Write section data
 	for (const auto& section : m_sections)
 	{
-		if(totalBytesWritten < section.getRawAddress())
+		if (totalBytesWritten < section.getRawAddress())
 		{
 			std::vector<uint8_t> padding(section.getRawAddress() - totalBytesWritten);
 			std::fill(padding.begin(), padding.end(), 0);
@@ -211,13 +211,13 @@ void ExecutableFile::rewriteImports()
 
 	uint32_t iatSize = 0;
 	uint32_t hintTableSize = 0;
-	for(const auto& module : m_imports)
+	for (const auto& module : m_imports)
 	{
 		iatSize += sizeof(IMAGE_THUNK_DATA); // Null entry per module, need a way to identify original modules.
 		// if its not an original function, we need to add size
-		for(const auto& function : module.getFunctions())
+		for (const auto& function : module.getFunctions())
 		{
-			if(!function.getOriginal())
+			if (!function.getOriginal())
 			{
 				iatSize += sizeof(IMAGE_THUNK_DATA);
 
@@ -237,14 +237,14 @@ void ExecutableFile::rewriteImports()
 	uint32_t iltSize = iatSize;
 
 	// Null entry + 1 entry per module
-	uint32_t idtSize = sizeof(IMAGE_IMPORT_DESCRIPTOR) + (sizeof(IMAGE_IMPORT_DESCRIPTOR) * static_cast<uint32_t>(m_imports.size()));
+	uint32_t idtSize = sizeof(IMAGE_IMPORT_DESCRIPTOR) + (sizeof(IMAGE_IMPORT_DESCRIPTOR) * static_cast<uint32_t>(
+		m_imports.size()));
 
 	hintTableSize = Binder::alignTo(hintTableSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 
 	uint32_t importDataSize = iatSize + idtSize + iltSize + hintTableSize;
 
 
-	
 	// Create the new import section. Just need read write
 	const AddressPair importAddressPair = getNextAddress();
 	ImageSection* newImportSection = nullptr;
@@ -267,8 +267,6 @@ void ExecutableFile::rewriteImports()
 	std::span idtData(m_newImportData.data() + idtOffset, idtSize);
 	std::span iltData(m_newImportData.data() + iltOffset, iltSize);
 	std::span hintTableData(m_newImportData.data() + hintTableOffset, hintTableSize);
-
-
 
 
 	// We need to copy the original import directory entries, and while we're at it, capture the original import addresses. (todo: move to fetching part)
@@ -299,7 +297,8 @@ void ExecutableFile::rewriteImports()
 		{
 			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
-				m_addressMap[moduleName + "." + std::to_string(thunk->u1.Ordinal)] = thunk->u1.AddressOfData; // Save the original import address
+				m_addressMap[moduleName + "." + std::to_string(thunk->u1.Ordinal)] = thunk->u1.AddressOfData;
+				// Save the original import address
 				++count;
 				++thunk;
 				continue;
@@ -317,40 +316,43 @@ void ExecutableFile::rewriteImports()
 	}
 
 
-	std::vector <IMAGE_IMPORT_DESCRIPTOR> newImportDescriptors;
+	std::vector<IMAGE_IMPORT_DESCRIPTOR> newImportDescriptors;
 
 	uint32_t moduleCount = 0;
 	uint32_t importCount = 0;
 	uint32_t hintNameTableOffset = 0;
 
 	// We now need to write the new import directories and import addresses.
-	for(const auto& importedModule : m_imports)
+	for (const auto& importedModule : m_imports)
 	{
 		bool notOriginalModule = false;
 		uint32_t notOriginalFunctions = 0;
 
-		for(const auto& function : importedModule.getFunctions())
+		for (const auto& function : importedModule.getFunctions())
 		{
-			if(!function.getOriginal())
+			if (!function.getOriginal())
 			{
 				notOriginalModule = true;
 				notOriginalFunctions += 1;
 				IMAGE_THUNK_DATA thunkData = {};
 
-				if(!function.getIsOrdinal())
+				if (!function.getIsOrdinal())
 				{
-					thunkData.u1.AddressOfData = importAddressPair.virtualAddress + hintTableOffset + hintNameTableOffset;
+					thunkData.u1.AddressOfData = importAddressPair.virtualAddress + hintTableOffset +
+						hintNameTableOffset;
 
-					memcpy(iatData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
-					memcpy(iltData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+					memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+					memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
 
-					m_addressMap[std::string(importedModule.getName()) + "." + std::string(function.getName())] = importAddressPair.virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
+					m_addressMap[std::string(importedModule.getName()) + "." + std::string(function.getName())] =
+						importAddressPair.virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
 
 					uint16_t hint = 0;
 					memcpy(hintTableData.data() + hintNameTableOffset, &hint, sizeof(hint));
 					hintNameTableOffset += sizeof(hint);
 
-					memcpy(hintTableData.data() + hintNameTableOffset, function.getName().data(), function.getName().size());
+					memcpy(hintTableData.data() + hintNameTableOffset, function.getName().data(),
+					       function.getName().size());
 					hintNameTableOffset += static_cast<uint32_t>(function.getName().size() + 1);
 
 					if ((function.getName().size() + 1) % 2 != 0)
@@ -362,20 +364,21 @@ void ExecutableFile::rewriteImports()
 				{
 					thunkData.u1.Ordinal = function.getOrdinal();
 
-					memcpy(iatData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
-					memcpy(iltData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
-					
-					m_addressMap[std::string(importedModule.getName()) + "." + std::to_string(function.getOrdinal())] = importAddressPair.virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
+					memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+					memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &thunkData, sizeof(thunkData));
+
+					m_addressMap[std::string(importedModule.getName()) + "." + std::to_string(function.getOrdinal())] =
+						importAddressPair.virtualAddress + importCount * sizeof(IMAGE_THUNK_DATA);
 				}
 				++importCount;
 			}
 		}
 
-		if(notOriginalModule)
+		if (notOriginalModule)
 		{
 			IMAGE_THUNK_DATA nullThunkData = {0};
-			memcpy(iatData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
-			memcpy(iltData.data() + importCount *  sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
+			memcpy(iatData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
+			memcpy(iltData.data() + importCount * sizeof(IMAGE_THUNK_DATA), &nullThunkData, sizeof(nullThunkData));
 			++importCount;
 
 			IMAGE_IMPORT_DESCRIPTOR importDescriptor = {};
@@ -383,14 +386,17 @@ void ExecutableFile::rewriteImports()
 			importDescriptor.Name = importAddressPair.virtualAddress + hintTableOffset + hintNameTableOffset;
 
 			// calculate using the module count and import count
-			
+
 			// TODO: these are probably wrong
-			importDescriptor.OriginalFirstThunk = importAddressPair.virtualAddress + iltOffset + (importCount - notOriginalFunctions) * sizeof(IMAGE_THUNK_DATA) - sizeof(IMAGE_THUNK_DATA);
-			importDescriptor.FirstThunk = importAddressPair.virtualAddress + ((importCount - notOriginalFunctions) * sizeof(IMAGE_THUNK_DATA)) - sizeof(IMAGE_THUNK_DATA);
+			importDescriptor.OriginalFirstThunk = importAddressPair.virtualAddress + iltOffset + (importCount -
+				notOriginalFunctions) * sizeof(IMAGE_THUNK_DATA) - sizeof(IMAGE_THUNK_DATA);
+			importDescriptor.FirstThunk = importAddressPair.virtualAddress + ((importCount - notOriginalFunctions) *
+				sizeof(IMAGE_THUNK_DATA)) - sizeof(IMAGE_THUNK_DATA);
 
 			newImportDescriptors.push_back(importDescriptor);
 
-			memcpy(hintTableData.data() + hintNameTableOffset, importedModule.getName().data(), importedModule.getName().size());
+			memcpy(hintTableData.data() + hintNameTableOffset, importedModule.getName().data(),
+			       importedModule.getName().size());
 			hintNameTableOffset += static_cast<uint32_t>(importedModule.getName().size() + 1);
 
 			moduleCount++;
@@ -405,22 +411,26 @@ void ExecutableFile::rewriteImports()
 	//memcpy(idtData.data(), originalImportDescriptors.data(), originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 
 	int test = 0;
-	for(const auto& importDescriptor : originalImportDescriptors)
+	for (const auto& importDescriptor : originalImportDescriptors)
 	{
 		IMAGE_IMPORT_DESCRIPTOR newImportDescriptor = *importDescriptor;
-		memcpy(idtData.data() + test * sizeof(IMAGE_IMPORT_DESCRIPTOR), &newImportDescriptor, sizeof(IMAGE_IMPORT_DESCRIPTOR));
+		memcpy(idtData.data() + test * sizeof(IMAGE_IMPORT_DESCRIPTOR), &newImportDescriptor,
+		       sizeof(IMAGE_IMPORT_DESCRIPTOR));
 		test++;
 	}
 
 
 	// Write the new import descriptors
-	memcpy(idtData.data() + originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR), newImportDescriptors.data(), newImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR));
+	memcpy(idtData.data() + originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR),
+	       newImportDescriptors.data(), newImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 
 
 	newImportSection->setData(m_newImportData);
 
-	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = newImportSection->getVirtualAddress() + idtOffset;
-	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR) + newImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR);
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = newImportSection->
+		getVirtualAddress() + idtOffset;
+	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = originalImportDescriptors.size() *
+		sizeof(IMAGE_IMPORT_DESCRIPTOR) + newImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR);
 
 
 	std::cout << "Done" << "\n";

@@ -1,14 +1,14 @@
 #pragma once
 #include <d3d11.h>
 
-class D3D11StateBlock{
+class D3D11StateBlock
+{
 public:
 	D3D11StateBlock(ID3D11DeviceContext* pContext);
 	~D3D11StateBlock();
 
 	void Store();
 	void Restore();
-	
 
 private:
 	void Release();
