@@ -1,8 +1,6 @@
 #pragma once
 #include <string_view>
-#include <map>
 #include <dia2.h>
-#include <DbgHelp.h>
 #include <atlbase.h>
 #include <unordered_map>
 

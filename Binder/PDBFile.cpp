@@ -1,7 +1,8 @@
 #include "PDBFile.h"
 #include "utils.h"
 #include "ExecutableFile.h"
-
+#include <DbgHelp.h>
+#include <map>
 #include <comutil.h>
 #include <comdef.h>
 #include <fstream>

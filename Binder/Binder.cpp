@@ -65,6 +65,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 	std::vector<zasm::x86::Gp> regsToSave = {
 		zasm::x86::rcx, zasm::x86::rdx, zasm::x86::r8, zasm::x86::r9, zasm::x86::rbp
 	};
+
 	for (auto reg : regsToSave)
 	{
 		m_assembler.push(reg);

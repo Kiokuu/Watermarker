@@ -1,0 +1,38 @@
+# Change to directory where compile_commands.json is
+compilation_database_dir: B:\Programming\C++\Watermarker\.build\x64-release\
+# Change to directory where diagram should be written
+output_directory: docs/diagrams
+diagrams:
+  binder:
+    type: class
+    include_relations_also_as_members: false
+    generate_packages: true
+    package_type: directory
+    glob:
+      - Binder/*.cpp
+      - Binder/GUI/*.cpp
+    include:
+      paths:
+        - Binder
+        - Binder/GUI
+    exclude:
+      namespaces:
+        -  std
+      paths:
+        - Binder/imgui
+        - Binder/imgui_filedialog
+  watermark:
+    type: class
+    include_relations_also_as_members: true
+    generate_packages: true
+    package_type: directory
+    glob:
+      - Watermark/*.cpp
+    include:
+      paths:
+        - Watermark
+    exclude:
+      namespaces:
+        -  std
+      paths:
+        - Watermark/CImg
