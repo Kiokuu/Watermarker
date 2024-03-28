@@ -23,7 +23,7 @@ diagrams:
         - Binder/imgui_filedialog
   watermark:
     type: class
-    include_relations_also_as_members: true
+    include_relations_also_as_members: false
     generate_packages: true
     package_type: directory
     glob:
