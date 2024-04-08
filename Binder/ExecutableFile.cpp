@@ -9,6 +9,7 @@ ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImpor
 	// Open the executable file
 	std::ifstream file(executablePath.data(), std::ios::binary);
 
+	// If the file failed to open, throw an exception
 	if (!file.is_open())
 	{
 		throw std::runtime_error("Failed to open file");
@@ -75,9 +76,11 @@ void ExecutableFile::save(std::string_view savePath)
 	m_ntHeaders.OptionalHeader.SizeOfImage = sizeOfImage;
 	m_ntHeaders.FileHeader.NumberOfSections = m_sections.size();
 
-
+	// Create the save file from the savePath, and obtain a handle to it.
 	HANDLE saveFile = CreateFileA(savePath.data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
 	                              nullptr);
+
+	// If the handle is invalid, throw an exception.
 	if (saveFile == INVALID_HANDLE_VALUE)
 	{
 		throw std::runtime_error("Failed to create save file");

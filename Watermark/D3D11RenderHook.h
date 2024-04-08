@@ -40,6 +40,7 @@ public:
 	/**
 	 * @brief Constructs a D3D11RenderHook object.
 	 * @param hWnd The handle to the window.
+	 *
 	 * @param watermark_data The watermark text data.
 	 */
 	D3D11RenderHook(HWND hWnd, const char* watermark_data);

@@ -81,7 +81,7 @@ public:
 	void addImport(std::string moduleName, std::string functionName);
 
 	/**
-	 * @brief Rewrites the import table in the executable.
+	 * @brief Rewrites the import table in the executable with the new import data.
 	 */
 	void rewriteImports();
 

@@ -47,19 +47,27 @@ bool Binder::loadExecutable()
 
 bool Binder::writeAssembly(std::string_view watermark)
 {
+	// Add the watermark function to the imports.
 	m_executable->addImport("Watermark.dll", "Watermark");
 	m_executable->rewriteImports();
 
 	ImageSection* watermarkSection;
 
+	// Create a new section for the additional code.
 	m_executable->createSection(".newsec", 0x1000, IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE,
 	                            &watermarkSection);
 
+	// Get the original entry point of the executable to jump back to later
 	uint32_t OEP = m_executable->getEntryPoint();
+
+	// Get the address of the watermark function
 	uint32_t waterAddress = m_executable->getImportAddress("Watermark.dll", "Watermark");
 
+	// Create two labels, one for the start and one to point to the watermark data.
 	auto startLabel = m_program.createLabel("start");
 	auto watermarkLabel = m_program.createLabel("watermark");
+
+	// Attach to the start label
 	m_assembler.bind(startLabel);
 
 	std::vector<zasm::x86::Gp> regsToSave = {
@@ -71,11 +79,16 @@ bool Binder::writeAssembly(std::string_view watermark)
 		m_assembler.push(reg);
 	}
 
+	// Save the stack
 	m_assembler.mov(zasm::x86::rbp, zasm::x86::rsp);
 
+	// Push the watermark data address to the RCX register
 	m_assembler.lea(zasm::x86::rcx, qword_ptr(zasm::x86::rip, watermarkLabel));
 
+	// Call the watermark function
 	m_assembler.call(qword_ptr(zasm::x86::rip, waterAddress));
+
+	// Restore the stack
 	m_assembler.mov(zasm::x86::rsp, zasm::x86::rbp);
 
 	for (auto reg : regsToSave)
@@ -85,10 +98,10 @@ bool Binder::writeAssembly(std::string_view watermark)
 
 	m_assembler.jmp(zasm::Imm32(OEP));
 
-
+	// Attach to the watermark label
 	m_assembler.bind(watermarkLabel);
 
-	// Write the watermark to the new section as data
+	// Write the watermark data within the watermark label with a null terminator.
 	const char* watermarkData = watermark.data();
 	m_assembler.embed(watermarkData, strlen(watermarkData) + 1);
 

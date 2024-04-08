@@ -1,3 +1,44 @@
+/*
+ * This file contains a modified version of the D11StateBlock.cpp source file from the Mumble project,
+ * which is licensed under the BSD-3 License. The original copyright notice and license text are
+ * retained below:
+ */
+
+// Original copyright notice:
+// Copyright 2014-2023 The Mumble Developers. All rights reserved.
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file at the root of the
+// Mumble source tree or at <https://www.mumble.info/LICENSE>.
+//
+// Copyright (C) 2011-2013, Nye Liu <nyet@nyet.org>
+// Copyright (C) 2011-2013, Kissaki <kissaki@gmx.de>
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+// - Neither the name of the Mumble Developers nor the names of its
+//   contributors may be used to endorse or promote products derived from this
+//   software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include "D3D11RenderHook.h"
 #include <d3dcompiler.h>
 #include <iostream>
@@ -80,7 +121,7 @@ void D3D11RenderHook::InitializeD3DResources()
 	DXGI_SWAP_CHAIN_DESC desc;
 	m_pSwapChain->GetDesc(&desc);
 
-	auto testText = m_watermarkData.c_str();
+	auto watermarkText = m_watermarkData.c_str();
 	int width = desc.BufferDesc.Width;
 	int height = desc.BufferDesc.Height;
 
@@ -91,15 +132,16 @@ void D3D11RenderHook::InitializeD3DResources()
 
 	constexpr unsigned char white[] = {255, 255, 255, 255};
 
-	int numRepetitionsX = (width + 100) / 100; // Adjust repetition width to text width
-	int numRepetitionsY = (height + 20) / 20; // Adjust repetition height to text height
+	// Calculate the number of repetitions of the text in the image
+	int numRepetitionsX = (width + 100) / 100;
+	int numRepetitionsY = (height + 20) / 20;
 
 	// Draw the text at each repetition position
 	for (int y = 0; y < numRepetitionsY; ++y)
 	{
 		for (int x = 0; x < numRepetitionsX; ++x)
 		{
-			watermark.draw_text(x * 100, y * 20, testText, white, 0, 1, fontHeight);
+			watermark.draw_text(x * 100, y * 20, watermarkText, white, 0, 1, fontHeight);
 		}
 	}
 
@@ -353,6 +395,9 @@ HRESULT __fastcall D3D11RenderHook::RenderWatermarkStub(IDXGISwapChain* pSwapCha
 HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height,
                                        DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
+	// Print the new width and height.
+	printf("Resizing buffers to %d x %d\n", Width, Height);
+
 	m_pRenderTargetView->Release();
 
 	HRESULT hr = m_originalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
@@ -411,10 +456,11 @@ void D3D11RenderHook::HookPresent()
 	swapChainDescr.OutputWindow = m_hWnd;
 	swapChainDescr.Windowed = false;
 
+	// Store the pointers to the swap chain and device
 	IDXGISwapChain* swapChainPtr = nullptr;
 	ID3D11Device* devicePtr = nullptr;
 
-
+	// Create swapchain and device, and store the swapchain and device pointers
 	if (FAILED(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL, 0, D3D11_SDK_VERSION,
 		&swapChainDescr, &swapChainPtr, &devicePtr, NULL, NULL)))
 	{
@@ -422,8 +468,13 @@ void D3D11RenderHook::HookPresent()
 		return;
 	}
 
+	// Get the vtable of the swap chain
 	uint64_t* swapChainVtable = *reinterpret_cast<uint64_t**>(swapChainPtr);
+
+	// Get the present pointer within the vtable
 	auto presentPtr = reinterpret_cast<uint64_t*>(swapChainVtable[8]);
+
+	// Get the resize buffer pointer within the vtable
 	auto resizeBufferPtr = reinterpret_cast<uint64_t*>(swapChainVtable[13]);
 
 	if (MH_Initialize() != MH_OK)
@@ -449,6 +500,7 @@ void D3D11RenderHook::HookPresent()
 		std::cerr << "Failed to enable hooks" << '\n';
 	}
 
+	// Release the swap chain and device pointers
 	//swapChainPtr->Release();
 	//devicePtr->Release();
 }
