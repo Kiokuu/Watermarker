@@ -61,6 +61,12 @@ void ImguiDraw::draw()
 		embedWatermark(text);
 	}
 
+
+	if(ImGui::Button("Exit"))
+	{
+		exit(0);
+	}
+
 	displayErrorPopup();
 	displaySuccessPopup();
 
