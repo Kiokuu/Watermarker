@@ -282,7 +282,10 @@ void ExecutableFile::rewriteImports()
 
 	std::vector<IMAGE_IMPORT_DESCRIPTOR*> originalImportDescriptors;
 
-	auto importSection = getSection(importDirectory.VirtualAddress);
+	// Get the import section
+	const ImageSection* importSection = getSection(importDirectory.VirtualAddress);
+
+
 	auto importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(m_data.data() + importSection->vaToFo(
 		importDirectory.VirtualAddress));
 
@@ -292,9 +295,7 @@ void ExecutableFile::rewriteImports()
 	{
 		originalImportDescriptors.push_back(importDescriptor);
 		std::string moduleName = reinterpret_cast<char*>(m_data.data() + importSection->vaToFo(importDescriptor->Name));
-		uint32_t thunkOffset = importDescriptor->FirstThunk;
-
-		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(thunkOffset));
+		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(importDescriptor->OriginalFirstThunk));
 
 		while (thunk->u1.AddressOfData != 0)
 		{
@@ -495,13 +496,16 @@ void ExecutableFile::parse()
 
 void ExecutableFile::parseDosHeader()
 {
+	// Cast the beginning of the data to a DOS header
 	m_dosHeader = *reinterpret_cast<IMAGE_DOS_HEADER*>(m_data.data());
 
+	// Ensure the dos header is valid
 	if (m_dosHeader.e_magic != IMAGE_DOS_SIGNATURE)
 	{
 		throw std::runtime_error("Invalid DOS header");
 	}
 
+	// Ensure the NT header offset is valid.
 	if (m_dosHeader.e_lfanew == 0 || m_dosHeader.e_lfanew >= m_data.size())
 	{
 		throw std::runtime_error("Invalid DOS header -- NT Header offset");
@@ -510,22 +514,28 @@ void ExecutableFile::parseDosHeader()
 
 void ExecutableFile::parseNtHeaders()
 {
+	// Cast the data found at the RVA of the NT headers mentioned in the DOS header to the NT headers.
 	m_ntHeaders = *reinterpret_cast<IMAGE_NT_HEADERS*>(m_data.data() + m_dosHeader.e_lfanew);
+
+	// Ensure the NT header is valid.
 	if (m_ntHeaders.Signature != IMAGE_NT_SIGNATURE)
 	{
 		throw std::runtime_error("Invalid NT headers");
 	}
 
+	// Ensure that the optional header size is correct and intact.
 	if (m_ntHeaders.FileHeader.SizeOfOptionalHeader != sizeof(IMAGE_OPTIONAL_HEADER))
 	{
 		throw std::runtime_error("Invalid optional header size");
 	}
 
+	// Ensure that the optional header is 64 bit, as currently only 64 bit executables are supported.
 	if (m_ntHeaders.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) // 64bit
 	{
 		throw std::runtime_error("Invalid optional header magic");
 	}
 
+	// Ensure that the program has a valid entry point.
 	if (m_ntHeaders.OptionalHeader.AddressOfEntryPoint == 0)
 	{
 		throw std::runtime_error("Invalid entry point");
@@ -534,13 +544,17 @@ void ExecutableFile::parseNtHeaders()
 
 void ExecutableFile::parseSections()
 {
+	// Resize the m_sections vector to hold the number of sections in the executable.
 	m_sections.resize(m_ntHeaders.FileHeader.NumberOfSections);
 
+	// For each section in the executable...
 	for (size_t i = 0; i < m_ntHeaders.FileHeader.NumberOfSections; i++)
 	{
+		// Fetch the header based on the section index.
 		const auto section = reinterpret_cast<IMAGE_SECTION_HEADER*>(m_data.data() + m_dosHeader.e_lfanew + sizeof(
 			IMAGE_NT_HEADERS) + i * sizeof(IMAGE_SECTION_HEADER));
 
+		// Set up the section in the m_sections vector with the data from the header.
 		m_sections[i] = ImageSection(
 			std::string_view(reinterpret_cast<const char*>(section->Name), sizeof(section->Name)),
 			section->VirtualAddress,
@@ -551,6 +565,8 @@ void ExecutableFile::parseSections()
 			std::span(m_data.data() + section->PointerToRawData, section->SizeOfRawData)
 		);
 	}
+
+	std::cout << "Parsed sections" << "\n";
 }
 
 void ExecutableFile::parseImports()

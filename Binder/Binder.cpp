@@ -96,6 +96,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 		m_assembler.pop(reg);
 	}
 
+	// Write the jump back to the original entry point
 	m_assembler.jmp(zasm::Imm32(OEP));
 
 	// Attach to the watermark label
@@ -105,6 +106,7 @@ bool Binder::writeAssembly(std::string_view watermark)
 	const char* watermarkData = watermark.data();
 	m_assembler.embed(watermarkData, strlen(watermarkData) + 1);
 
+	// Serialize the assembly into bytes
 	zasm::Error err = m_serializer.serialize(m_program, watermarkSection->getVirtualAddress());
 
 	if (err != zasm::Error::None)
@@ -113,12 +115,12 @@ bool Binder::writeAssembly(std::string_view watermark)
 		return false;
 	}
 
-
+	// Set the data of the section to the serialized bytes
 	watermarkSection->setData({const_cast<std::uint8_t*>(m_serializer.getCode()), m_serializer.getCodeSize()});
 
 	// Set the entry point of the executable file
 	m_executable->setEntryPoint(watermarkSection->getVirtualAddress());
-
+	
 	return true;
 }
 

@@ -30,6 +30,6 @@ const char* vertexShaderSource = R"(
 
 	float4 ps_main(vs_out input) : SV_TARGET {
 		float4 texColor = _texture.Sample(_sampler, input.uv);
-		return float4(texColor.rgb, texColor.a * 0.02);
+		return float4(texColor.rgb, texColor.a * 0.05);
 	}
 )";
