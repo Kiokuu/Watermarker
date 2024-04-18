@@ -9,7 +9,6 @@
 #include "Windows.h"
 #include "ImportedModule.h"
 #include "ExportedModule.h"
-#include "PDBFile.h"
 
 
 /**
@@ -101,7 +100,7 @@ public:
 	 * @brief Gets a pointer to the PDB file.
 	 * @return Pointer to the PDB file.
 	 */
-	PDBFile* getPDBFile() { return &m_pdbFile; }
+	//PDBFile* getPDBFile() { return &m_pdbFile; }
 
 	/**
 	 * @brief Gets the address of an imported function.
@@ -222,7 +221,7 @@ private:
 
 	IMAGE_DOS_HEADER m_dosHeader; /**< DOS header of the executable. */
 	IMAGE_NT_HEADERS m_ntHeaders; /**< NT headers of the executable. */
-	PDBFile m_pdbFile; /**< PDB file associated with the executable. */
+	//PDBFile m_pdbFile; /**< PDB file associated with the executable. */
 
 	bool m_rewriteImportsOnSave; /**< Flag indicating whether to rewrite imports on save. */
 };

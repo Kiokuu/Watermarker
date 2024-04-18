@@ -112,7 +112,7 @@ public:
 	/**
 	 * @brief Hooks the Present function.
 	 */
-	void HookPresent();
+	void Hook();
 
 private:
 	HWND m_hWnd; /**< Handle to the window. */

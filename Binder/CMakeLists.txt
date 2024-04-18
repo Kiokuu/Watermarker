@@ -32,7 +32,7 @@ FetchContent_MakeAvailable(imgui_filedialog)
 set_target_properties(ImGuiFileDialog PROPERTIES INCLUDE_DIRECTORIES ${IMGUI_DIR})
 
 # Add source to this project's executable.
-add_executable (Binder "Binder.cpp" "Binder.h" "main.cpp" "ExecutableFile.h" "ExecutableFile.cpp" "ImageSection.h" "ImageSection.cpp" "ImportedModule.h" "ExportedModule.h" "Utils.h" "PDBFile.h" "PDBFile.cpp" "Disassembly/Function.h" "Disassembly/Label.h" "Disassembly/Data.h"  "Disassembly/Instruction.h" "Disassembly/Disassembler.h" "Disassembly/Disassembler.cpp" "Disassembly/AsmItem.h" "GUI/ImguiHandler.cpp" "GUI/ImguiHandler.h" "imgui/imgui.cpp" "imgui/imgui_draw.cpp" "imgui/imgui_demo.cpp" "imgui/imgui_tables.cpp" "imgui/imgui_widgets.cpp" "imgui/backends/imgui_impl_dx11.cpp" "imgui/backends/imgui_impl_win32.cpp" "imgui_filedialog/ImGuiFileDialog.cpp" "GUI/ImguiDraw.cpp" "GUI/ImguiDraw.h")
+add_executable (Binder "Binder.cpp" "Binder.h" "main.cpp" "ExecutableFile.h" "ExecutableFile.cpp" "ImageSection.h"  "ImportedModule.h" "Utils.h" "GUI/ImguiHandler.cpp" "GUI/ImguiHandler.h" "imgui/imgui.cpp" "imgui/imgui_draw.cpp" "imgui/imgui_demo.cpp" "imgui/imgui_tables.cpp" "imgui/imgui_widgets.cpp" "imgui/backends/imgui_impl_dx11.cpp" "imgui/backends/imgui_impl_win32.cpp" "imgui_filedialog/ImGuiFileDialog.cpp" "GUI/ImguiDraw.cpp" "GUI/ImguiDraw.h" "ExportedModule.h")
 
 
 target_include_directories(Binder PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include PUBLIC ${DIASDK_INCLUDE_DIRS} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/imgui ${CMAKE_CURRENT_LIST_DIR}/imgui/backends ${CMAKE_CURRENT_LIST_DIR}/imgui_filedialog)

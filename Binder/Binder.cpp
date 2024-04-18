@@ -18,8 +18,10 @@ Binder::Binder(): m_executable(nullptr), m_program(zasm::MachineMode::AMD64), m_
 
 bool Binder::bind(std::string_view path)
 {
+	// Set the executable path
 	m_executablePath = path;
 
+	// If the executable is not loaded, return false
 	if (!loadExecutable())
 	{
 		return false;
@@ -152,6 +154,7 @@ bool Binder::save(std::string_view name, std::string_view watermark)
 	// Copy the watermark.dll to the executable directory
 	std::filesystem::copy(watermarkPath, parentPath.string() + "\\" + "Watermark.dll", std::filesystem::copy_options::overwrite_existing);
 
+	// Free the executable from memory
 	delete m_executable;
 	m_executable = nullptr;
 

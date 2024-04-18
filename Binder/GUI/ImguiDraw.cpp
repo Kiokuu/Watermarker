@@ -12,6 +12,7 @@ ImguiDraw::ImguiDraw() : m_binder(new Binder())
 
 void ImguiDraw::draw()
 {
+	// Begin drawing the window
 	ImGui::Begin("Binder", nullptr, ImGuiWindowFlags_NoResize);
 
 	// Get window size
@@ -33,6 +34,7 @@ void ImguiDraw::draw()
 	ImVec2 maxSize = g_windowSize; // The full display area
 	ImVec2 minSize = {g_windowSize.x * 0.5f, g_windowSize.y * 0.5f}; // Half the display area
 
+	// If the file dialog is open, display it
 	if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", 0, minSize, maxSize))
 	{
 		if (!ImGuiFileDialog::Instance()->IsOk())
@@ -43,6 +45,7 @@ void ImguiDraw::draw()
 		std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 		std::cout << "Selected file: " << filePathName << std::endl;
 
+		// Attempt to load and attach to the executable
 		if (!attemptBind(filePathName))
 		{
 			setError("Failed to bind file");
@@ -51,22 +54,23 @@ void ImguiDraw::draw()
 		ImGuiFileDialog::Instance()->Close();
 	}
 
-	// Text input
+	// Input text for watermark
 	static char text[1024] = "";
 	ImGui::InputText("Watermark", text, IM_ARRAYSIZE(text));
 
-	// Button
+	// Embed watermark button
 	if (ImGui::Button("Embed Watermark"))
 	{
 		embedWatermark(text);
 	}
 
-
+	// Exit button
 	if(ImGui::Button("Exit"))
 	{
 		exit(0);
 	}
 
+	// If there is an error or success message, display a popup
 	displayErrorPopup();
 	displaySuccessPopup();
 

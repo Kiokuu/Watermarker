@@ -1,44 +1,3 @@
-/*
- * This file contains a modified version of the D11StateBlock.cpp source file from the Mumble project,
- * which is licensed under the BSD-3 License. The original copyright notice and license text are
- * retained below:
- */
-
-// Original copyright notice:
-// Copyright 2014-2023 The Mumble Developers. All rights reserved.
-// Use of this source code is governed by a BSD-style license
-// that can be found in the LICENSE file at the root of the
-// Mumble source tree or at <https://www.mumble.info/LICENSE>.
-//
-// Copyright (C) 2011-2013, Nye Liu <nyet@nyet.org>
-// Copyright (C) 2011-2013, Kissaki <kissaki@gmx.de>
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-// - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-// - Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// - Neither the name of the Mumble Developers nor the names of its
-//   contributors may be used to endorse or promote products derived from this
-//   software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #include "D3D11RenderHook.h"
 #include <d3dcompiler.h>
 #include <iostream>
@@ -61,6 +20,7 @@ D3D11RenderHook::D3D11RenderHook(HWND hWnd, const char* watermark_data)
 	  m_pInputLayout(nullptr), m_pVertexBuffer(nullptr), m_pSamplerState(nullptr), m_pTexture(nullptr),
 	  m_bHookInitialized(false)
 {
+	// Initialize the render hook
 	Initialize();
 }
 
@@ -71,6 +31,7 @@ D3D11RenderHook::~D3D11RenderHook()
 
 void D3D11RenderHook::Initialize()
 {
+	// Check if already initialized
 	if (m_pInstance == nullptr)
 	{
 		m_pInstance = this;
@@ -81,11 +42,13 @@ void D3D11RenderHook::Initialize()
 		return;
 	}
 
-	HookPresent();
+	// Hook the present function
+	Hook();
 }
 
 void D3D11RenderHook::InitializeD3DResources()
 {
+	// Get the back buffer
 	ID3D11Texture2D* pBackBuffer = nullptr;
 	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 	if (FAILED(hr))
@@ -107,20 +70,24 @@ void D3D11RenderHook::InitializeD3DResources()
 		printf("Failed to get device context\n");
 	}
 
+	// Create a stateblock to store the current state and restore it after rendering
 	m_pStateBlock = new D3D11StateBlock(m_pContext);
 
+	// Create a render target view
 	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
 	if (FAILED(hr))
 	{
 		printf("Failed to create render target view\n");
 	}
 
+	// Release the backbuffer as it is no longer needed
 	pBackBuffer->Release();
 
-
+	// Get the sawpchain descriptor
 	DXGI_SWAP_CHAIN_DESC desc;
 	m_pSwapChain->GetDesc(&desc);
 
+	// Get the watermark text as a const char*
 	auto watermarkText = m_watermarkData.c_str();
 	int width = desc.BufferDesc.Width;
 	int height = desc.BufferDesc.Height;
@@ -150,7 +117,7 @@ void D3D11RenderHook::InitializeD3DResources()
 	// Get the pixel data of the image
 	unsigned char* pixels = watermark.data();
 
-
+	// Interleave the pixels to be in the format R, G, B, A, R, G, B, A, ...
 	std::vector<unsigned char> interleavedPixels(width * height * 4);
 	for (int i = 0; i < width * height; ++i)
 	{
@@ -166,10 +133,11 @@ void D3D11RenderHook::InitializeD3DResources()
 	}
 
 
-	// Save the image to a file
-
+	// Save the image to a file (for debugging)
 	watermark.save_bmp("watermark.bmp");
 
+
+	// Create a texture2d descriptor
 	D3D11_TEXTURE2D_DESC textureDesc = {};
 	textureDesc.Width = width;
 	textureDesc.Height = height;
@@ -183,21 +151,24 @@ void D3D11RenderHook::InitializeD3DResources()
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = 0;
 
+	// Create a subresource data descriptor initialized with the interleaved pixels
 	D3D11_SUBRESOURCE_DATA initDataTex = {};
 	initDataTex.pSysMem = interleavedPixels.data();
 	initDataTex.SysMemPitch = width * 4;
 
+	// Create the texture
 	hr = m_pDevice->CreateTexture2D(&textureDesc, &initDataTex, &m_pTexture);
 	if (FAILED(hr))
 	{
 		printf("Failed to create texture\n");
 	}
 
-
+	// Create a blend descriptor
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.AlphaToCoverageEnable = FALSE;
 	blendDesc.IndependentBlendEnable = FALSE;
 
+	// Set the blend state to blend the watermark with the background
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
@@ -207,13 +178,14 @@ void D3D11RenderHook::InitializeD3DResources()
 	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
+	// Create the blendstate.
 	hr = m_pDevice->CreateBlendState(&blendDesc, &m_pBlendState);
 	if (FAILED(hr))
 	{
 		printf("Failed to create blend state\n");
 	}
 
-
+	// Create a shader resource view.
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -226,6 +198,7 @@ void D3D11RenderHook::InitializeD3DResources()
 		printf("Failed to create shader resource view\n");
 	}
 
+	// Create a sampler, to sample the texture.
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -240,7 +213,7 @@ void D3D11RenderHook::InitializeD3DResources()
 		printf("Failed to create sampler state\n");
 	}
 
-
+	// Set the viewport
 	m_vp.TopLeftX = 0;
 	m_vp.TopLeftY = 0;
 	m_vp.Width = desc.BufferDesc.Width;
@@ -299,6 +272,7 @@ void D3D11RenderHook::InitializeD3DResources()
 		printf("Failed to create input layout\n");
 	}
 
+	// Create index buffer
 	UINT indexBuffer[] = {0, 1, 2, 3};
 
 	// Create vertex buffer
@@ -309,12 +283,14 @@ void D3D11RenderHook::InitializeD3DResources()
 		{{1, 1}, {1, 1}} // Top right
 	};
 
+	// Create index buffer descriptor for the quad.
 	D3D11_BUFFER_DESC indexBufferDesc = {};
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth = sizeof(indexBuffer);
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 
+	// Create buffer with the index data
 	D3D11_SUBRESOURCE_DATA initDataIndex = {};
 	initDataIndex.pSysMem = indexBuffer;
 
@@ -331,9 +307,11 @@ void D3D11RenderHook::InitializeD3DResources()
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 
+	// Initialize the vertex buffer with the vertices
 	D3D11_SUBRESOURCE_DATA initData = {};
 	initData.pSysMem = vertices;
 
+	// Create the vertex buffer
 	hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &initData, &m_pVertexBuffer);
 	if (FAILED(hr))
 	{
@@ -343,11 +321,13 @@ void D3D11RenderHook::InitializeD3DResources()
 
 HRESULT D3D11RenderHook::RenderWatermark(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
 {
+	// If the test flag is set, return immediately
 	if (Flags & DXGI_PRESENT_TEST)
 	{
 		return m_originalPresent(pSwapChain, SyncInterval, Flags);
 	}
 
+	// If the hook data is not initialized, initialize it
 	if (!m_bHookInitialized)
 	{
 		m_pSwapChain = pSwapChain;
@@ -355,32 +335,39 @@ HRESULT D3D11RenderHook::RenderWatermark(IDXGISwapChain* pSwapChain, UINT SyncIn
 		m_bHookInitialized = true;
 	}
 
-
+	// Store the current state
 	m_pStateBlock->Store();
 
+	// Set the render target view and blend state
 	m_pContext->OMSetRenderTargets(1, &m_pRenderTargetView, nullptr);
 	m_pContext->OMSetBlendState(m_pBlendState, nullptr, 0xffffffff);
 
-	// Set vertex buffer
+	// Set vertex and index buffer
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	m_pContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
 	m_pContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
+	// Set the input layout and topology
 	m_pContext->IASetInputLayout(m_pInputLayout);
 	m_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	// Set the viewport
 	m_pContext->RSSetViewports(1, &m_vp);
 
+	// Set the pixel shader sampler and resources
 	m_pContext->PSSetSamplers(0, 1, &m_pSamplerState);
 	m_pContext->PSSetShaderResources(0, 1, &m_pShaderResourceView);
 
+	// Set the shaders
 	m_pContext->GSSetShader(nullptr, nullptr, 0);
 	m_pContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
+	// Draw the watermark
 	m_pContext->DrawIndexed(4, 0, 0);
 
+	// Restore the state after drawing
 	m_pStateBlock->Restore();
 
 	return m_originalPresent(pSwapChain, SyncInterval, Flags);
@@ -398,8 +385,10 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 	// Print the new width and height.
 	printf("Resizing buffers to %d x %d\n", Width, Height);
 
+	// Release the render target view
 	m_pRenderTargetView->Release();
 
+	// Call the original resize buffers function to utilize the changes
 	HRESULT hr = m_originalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 	if (FAILED(hr))
 	{
@@ -407,6 +396,7 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 		return hr;
 	}
 
+	// Get the back buffer
 	ID3D11Texture2D* pBackBuffer = nullptr;
 	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 	if (FAILED(hr))
@@ -415,6 +405,7 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 		return hr;
 	}
 
+	// Create a render target view based on the new size
 	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
 	if (FAILED(hr))
 	{
@@ -422,11 +413,14 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 		return hr;
 	}
 
+	// Release the back buffer
 	pBackBuffer->Release();
 
+	// Get the swapchain descriptor for the new size
 	DXGI_SWAP_CHAIN_DESC desc;
 	m_pSwapChain->GetDesc(&desc);
 
+	// Set the viewport based on the new size
 	m_vp.TopLeftX = 0;
 	m_vp.TopLeftY = 0;
 	m_vp.Width = desc.BufferDesc.Width;
@@ -443,8 +437,9 @@ HRESULT __fastcall D3D11RenderHook::ResizeBuffersStub(IDXGISwapChain* pSwapChain
 	return m_pInstance->ResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
 
-void D3D11RenderHook::HookPresent()
+void D3D11RenderHook::Hook()
 {
+	// Create a swap chain descriptor attached to the window
 	DXGI_SWAP_CHAIN_DESC swapChainDescr = {0};
 	swapChainDescr.BufferDesc.RefreshRate.Numerator = 0;
 	swapChainDescr.BufferDesc.RefreshRate.Denominator = 1;
@@ -477,24 +472,28 @@ void D3D11RenderHook::HookPresent()
 	// Get the resize buffer pointer within the vtable
 	auto resizeBufferPtr = reinterpret_cast<uint64_t*>(swapChainVtable[13]);
 
+	// Initialize MinHook
 	if (MH_Initialize() != MH_OK)
 	{
 		std::cerr << "Failed to initialize MinHook" << '\n';
 		return;
 	}
 
+	// Create a hook for the present function
 	if (MH_CreateHookEx(presentPtr, &RenderWatermarkStub, &m_originalPresent) != MH_OK)
 	{
-		std::cerr << "Failed to create hook" << '\n';
+		std::cerr << "Failed to create present hook" << '\n';
 		return;
 	}
 
+	// Create a hook for the resize buffers function
 	if (MH_CreateHookEx(resizeBufferPtr, &ResizeBuffersStub, &m_originalResizeBuffers) != MH_OK)
 	{
-		std::cerr << "Failed to create hook" << '\n';
+		std::cerr << "Failed to create resize buffer hook" << '\n';
 		return;
 	}
 
+	// Enable the hooks
 	if (MH_EnableHook(nullptr) != MH_OK)
 	{
 		std::cerr << "Failed to enable hooks" << '\n';

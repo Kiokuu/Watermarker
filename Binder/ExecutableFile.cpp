@@ -30,30 +30,40 @@ ExecutableFile::ExecutableFile(std::string_view executablePath) : m_rewriteImpor
 	file.close();
 }
 
+/*
 ExecutableFile::ExecutableFile(std::string_view executablePath, std::string_view pdbPath)
 {
+	// Open the executable file
 	std::ifstream file(executablePath.data(), std::ios::binary);
+
+	// If the file failed to open, throw an exception
 	if (!file.is_open())
 	{
 		throw std::runtime_error("Failed to open file");
 	}
 
+	// Ensure the vector is large enough to hold the file
 	file.seekg(0, std::ios::end);
 	m_data.resize(file.tellg());
 	file.seekg(0, std::ios::beg);
 
+	// Read the file into the vector
 	file.read(reinterpret_cast<char*>(m_data.data()), m_data.size());
 
+	// Parse the file
 	parse();
 
+	// Close the file
 	file.close();
 
+	// Load the PDB File
 	m_pdbFile = PDBFile(this, pdbPath);
 }
-
+*/
 
 void ExecutableFile::save(std::string_view savePath)
 {
+	// If rewrite imports on save is true, rewrite the imports.
 	if (m_rewriteImportsOnSave)
 		rewriteImports();
 
@@ -61,15 +71,18 @@ void ExecutableFile::save(std::string_view savePath)
 	uint32_t sizeOfHeaders = m_dosHeader.e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + m_ntHeaders.FileHeader.
 		SizeOfOptionalHeader + (sizeof(IMAGE_SECTION_HEADER) * m_sections.size());
 
+	// Align the size of headers to the file alignment
 	sizeOfHeaders = Binder::alignTo(sizeOfHeaders, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 
-	const auto max_virtual_address = std::ranges::max_element(m_sections,
+	// Get the highest virtual address section
+	const auto highest_va_section = std::ranges::max_element(m_sections,
 	                                                          [](const ImageSection& a, const ImageSection& b)
 	                                                          {
 		                                                          return a.getVirtualAddress() < b.getVirtualAddress();
 	                                                          });
 
-	uint32_t sizeOfImage = max_virtual_address->getVirtualAddress() + max_virtual_address->getVirtualSize();
+	// Calculate the size of the image based on the highest virtual address section and align  it
+	uint32_t sizeOfImage = highest_va_section->getVirtualAddress() + highest_va_section->getVirtualSize();
 	sizeOfImage = Binder::alignTo(sizeOfImage, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.SectionAlignment));
 
 	m_ntHeaders.OptionalHeader.SizeOfHeaders = sizeOfHeaders;
@@ -86,6 +99,7 @@ void ExecutableFile::save(std::string_view savePath)
 		throw std::runtime_error("Failed to create save file");
 	}
 
+	// Keep track of total bytes written to pad correctly
 	DWORD totalBytesWritten = 0;
 	DWORD bytesWritten = 0;
 
@@ -172,9 +186,11 @@ void ExecutableFile::save(std::string_view savePath)
 bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics,
                                    ImageSection** outSection)
 {
+	// Get the next available address pair
 	const AddressPair addressPair = getNextAddress();
 	ImageSection* section = nullptr;
 
+	// Create the section
 	if (!_createSection(name, addressPair.virtualAddress, virtualSize, addressPair.rawAddress,
 	                    Binder::alignTo(virtualSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment)),
 	                    characteristics, &section))
@@ -182,12 +198,14 @@ bool ExecutableFile::createSection(std::string_view name, uint32_t virtualSize, 
 		return false;
 	}
 
+	// Set the out section
 	*outSection = section;
 	return true;
 }
 
 void ExecutableFile::addImport(std::string moduleName, std::string functionName)
 {
+	// Check if the module already exists, if it does, add the function to it and rewrite.
 	for (auto& importedModule : m_imports)
 	{
 		if (_stricmp(importedModule.getName().data(), moduleName.data()) == 0)
@@ -198,6 +216,7 @@ void ExecutableFile::addImport(std::string moduleName, std::string functionName)
 		}
 	}
 
+	// If the module doesn't exist, create a new module and add the function to it.
 	m_rewriteImportsOnSave = true;
 	auto& module = m_imports.emplace_back(moduleName);
 	module.addFunction(functionName, false);
@@ -209,15 +228,13 @@ void ExecutableFile::rewriteImports()
 
 	std::cout << "Rewriting imports" << "\n";
 
-	// We can create a new import directory and section to hold the new import data. We can copy the import directory entries, and just write a new directory entry with the solely new imports.
-	// We also will want to add the original import addresses to the addressmap to be used later.
-
+	// Calculate the size of the new import data
 	uint32_t iatSize = 0;
 	uint32_t hintTableSize = 0;
 	for (const auto& module : m_imports)
 	{
 		iatSize += sizeof(IMAGE_THUNK_DATA); // Null entry per module, need a way to identify original modules.
-		// if its not an original function, we need to add size
+		// if its not an original function, add size
 		for (const auto& function : module.getFunctions())
 		{
 			if (!function.getOriginal())
@@ -236,6 +253,7 @@ void ExecutableFile::rewriteImports()
 		hintTableSize += static_cast<uint32_t>(module.getName().size() + 1); // DllName
 	}
 
+	// Align the IAT size to the file alignment
 	iatSize = Binder::alignTo(iatSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 	uint32_t iltSize = iatSize;
 
@@ -243,8 +261,10 @@ void ExecutableFile::rewriteImports()
 	uint32_t idtSize = sizeof(IMAGE_IMPORT_DESCRIPTOR) + (sizeof(IMAGE_IMPORT_DESCRIPTOR) * static_cast<uint32_t>(
 		m_imports.size()));
 
+	// Align the hint table size to the file alignment
 	hintTableSize = Binder::alignTo(hintTableSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 
+	// Get the total size of the import data
 	uint32_t importDataSize = iatSize + idtSize + iltSize + hintTableSize;
 
 
@@ -259,13 +279,16 @@ void ExecutableFile::rewriteImports()
 		throw std::runtime_error("Failed to create new import section");
 	}
 
+	// Resize the section to the new import section size
 	m_newImportData.resize(importDataSize);
 
+	// Keep track of the offsets for each part of the import data
 	uint32_t iatOffset = 0;
 	uint32_t idtOffset = iatSize;
 	uint32_t iltOffset = iatSize + idtSize;
 	uint32_t hintTableOffset = iatSize + idtSize + iltSize;
 
+	// Setup spans 
 	std::span iatData(m_newImportData.data(), iatSize);
 	std::span idtData(m_newImportData.data() + idtOffset, idtSize);
 	std::span iltData(m_newImportData.data() + iltOffset, iltSize);
@@ -280,20 +303,26 @@ void ExecutableFile::rewriteImports()
 		return;
 	}
 
+	// Store the original import descriptors
 	std::vector<IMAGE_IMPORT_DESCRIPTOR*> originalImportDescriptors;
 
 	// Get the import section
 	const ImageSection* importSection = getSection(importDirectory.VirtualAddress);
 
 
+	// Get the first import descriptor
 	auto importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(m_data.data() + importSection->vaToFo(
 		importDirectory.VirtualAddress));
 
 	uint32_t count = 0;
 
+	// Loop through the import descriptors
 	while (importDescriptor->Name != 0)
 	{
+		// Add the original import descriptor to the vector
 		originalImportDescriptors.push_back(importDescriptor);
+
+		// Get the module name
 		std::string moduleName = reinterpret_cast<char*>(m_data.data() + importSection->vaToFo(importDescriptor->Name));
 		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(importDescriptor->OriginalFirstThunk));
 
@@ -319,7 +348,6 @@ void ExecutableFile::rewriteImports()
 		++importDescriptor;
 	}
 
-
 	std::vector<IMAGE_IMPORT_DESCRIPTOR> newImportDescriptors;
 
 	uint32_t moduleCount = 0;
@@ -334,6 +362,7 @@ void ExecutableFile::rewriteImports()
 
 		for (const auto& function : importedModule.getFunctions())
 		{
+			// If the function is not original, need to create new iat/ilt entry + hint table entry
 			if (!function.getOriginal())
 			{
 				notOriginalModule = true;
@@ -378,6 +407,7 @@ void ExecutableFile::rewriteImports()
 			}
 		}
 
+		// If the module is not original, need to create new import descriptor
 		if (notOriginalModule)
 		{
 			IMAGE_THUNK_DATA nullThunkData = {0};
@@ -411,7 +441,7 @@ void ExecutableFile::rewriteImports()
 	newImportDescriptors.push_back(nullImportDescriptor);
 
 
-	// Need to write the new import descriptors, starting with the original ones. Dereference the pointers.
+	// Need to write the new import descriptors, starting with the original ones. 
 	//memcpy(idtData.data(), originalImportDescriptors.data(), originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 
 	int test = 0;
@@ -423,14 +453,14 @@ void ExecutableFile::rewriteImports()
 		test++;
 	}
 
-
 	// Write the new import descriptors
 	memcpy(idtData.data() + originalImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR),
 	       newImportDescriptors.data(), newImportDescriptors.size() * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 
-
+	// Set the new import data
 	newImportSection->setData(m_newImportData);
 
+	// Set the import directory to the new import section.
 	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = newImportSection->
 		getVirtualAddress() + idtOffset;
 	m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = originalImportDescriptors.size() *
@@ -571,36 +601,46 @@ void ExecutableFile::parseSections()
 
 void ExecutableFile::parseImports()
 {
+	// Get the import directory
 	const auto importDirectory = m_ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 	if (importDirectory.Size == 0)
 	{
 		return;
 	}
 
+	// Get the import section
 	const auto importSection = getSection(importDirectory.VirtualAddress);
 	if (importSection == nullptr)
 	{
 		throw std::runtime_error("Invalid import section");
 	}
 
+	// Get the import descriptors
 	auto importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(m_data.data() + importSection->vaToFo(
 		importDirectory.VirtualAddress));
 
+	// Loop through the import descriptors
 	while (importDescriptor->Name != 0)
 	{
+		// Get the module name
 		auto moduleName = reinterpret_cast<char*>(m_data.data() + importSection->vaToFo(importDescriptor->Name));
+
+		// Add the module to the imports vector
 		m_imports.emplace_back(moduleName);
 
+		// Get the thunk
 		const auto thunkOffset = importDescriptor->OriginalFirstThunk != 0
 			                         ? importDescriptor->OriginalFirstThunk
 			                         : importDescriptor->FirstThunk;
 
+		// Loop through the thunks
 		auto thunk = reinterpret_cast<IMAGE_THUNK_DATA*>(m_data.data() + importSection->vaToFo(thunkOffset));
+
+		// Add the imports to the module
 		while (thunk->u1.AddressOfData != 0)
 		{
 			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
 			{
-				// TODO: Handle ordinal imports
 				m_imports.back().addFunction(thunk->u1.Ordinal, true);
 				++thunk;
 				continue;
@@ -623,6 +663,7 @@ void ExecutableFile::parseExports()
 
 const ImageSection* ExecutableFile::getSection(std::string_view name)
 {
+	// Get section by name
 	for (auto& section : m_sections)
 	{
 		if (name == section.getName())
@@ -635,6 +676,7 @@ const ImageSection* ExecutableFile::getSection(std::string_view name)
 
 const ImageSection* ExecutableFile::getSection(uint32_t virtualAddress)
 {
+	// Get section by VA.
 	for (auto& section : m_sections)
 	{
 		if (virtualAddress >= section.getVirtualAddress() && virtualAddress < section.getVirtualAddress() + section.
@@ -668,10 +710,13 @@ bool ExecutableFile::_createSection(std::string_view name, uint32_t virtualAddre
 		return false;
 	}
 
+	// Align the raw size to the file alignment
 	rawSize = Binder::alignTo(rawSize, static_cast<uint32_t>(m_ntHeaders.OptionalHeader.FileAlignment));
 
+	// Add a section
 	m_ntHeaders.FileHeader.NumberOfSections++;
 
+	// TODO: Fix these
 	m_ntHeaders.OptionalHeader.SizeOfHeaders = Binder::alignTo(
 		m_ntHeaders.OptionalHeader.SizeOfHeaders + sizeof(IMAGE_SECTION_HEADER),
 		static_cast<uint64_t>(m_ntHeaders.OptionalHeader.FileAlignment)); // wrong?
@@ -680,6 +725,7 @@ bool ExecutableFile::_createSection(std::string_view name, uint32_t virtualAddre
 		m_ntHeaders.OptionalHeader.SizeOfImage + virtualSize + sizeof(IMAGE_SECTION_HEADER),
 		static_cast<uint64_t>(m_ntHeaders.OptionalHeader.SectionAlignment));
 
+	// Create the section and set the out section
 	*outSection = &m_sections.emplace_back(ImageSection{
 		name, virtualAddress, virtualSize, rawAddress, rawSize, characteristics, {}
 	});
