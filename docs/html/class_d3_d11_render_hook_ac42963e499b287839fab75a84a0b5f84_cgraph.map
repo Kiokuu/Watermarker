@@ -1,0 +1,19 @@
+<map id="D3D11RenderHook::Hook" name="D3D11RenderHook::Hook">
+<area shape="rect" id="Node000001" title="Hooks the Present function." alt="" coords="5,72,175,99"/>
+<area shape="rect" id="Node000002" href="$_d3_d11_render_hook_8h.html#a8f1e6066ed89908ccf328f6aa377d00e" title="Creates a MinHook hook for a function with extended parameters." alt="" coords="292,21,425,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="163,69,222,57,277,47,277,52,223,63,164,74"/>
+<area shape="rect" id="Node000003" href="$class_d3_d11_render_hook.html#a861cca2ec27f9ecdfdbf23e273a6bb59" title="Stub function for rendering a watermark." alt="" coords="223,72,494,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="175,83,207,83,207,88,175,88"/>
+<area shape="rect" id="Node000008" href="$class_d3_d11_render_hook.html#a3361a29b4b41c58f89a883eefac03e5b" title="Stub function for resizing the swap chain buffers." alt="" coords="235,123,482,149"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="164,97,223,108,268,117,267,122,222,113,163,102"/>
+<area shape="rect" id="Node000004" href="$class_d3_d11_render_hook.html#a010af099fe00d9d7ef630d2b90bab25e" title="Renders a watermark on the swap chain." alt="" coords="542,72,786,99"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="494,83,526,83,526,88,494,88"/>
+<area shape="rect" id="Node000005" href="$class_d3_d11_render_hook.html#a5a467a9c2c4c73834ce70cec726042de" title="Initializes Direct3D 11 resources." alt="" coords="834,5,1021,48"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="727,69,818,48,820,53,728,74"/>
+<area shape="rect" id="Node000006" href="$class_d3_d11_state_block.html#a870d21705df0d62c6a08b0cce2ef17df" title="Restores the device context state to the stored state." alt="" coords="839,72,1016,99"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="787,83,823,83,823,88,787,88"/>
+<area shape="rect" id="Node000007" href="$class_d3_d11_state_block.html#a82a1561b3f2b0d32fd4e3d94c17eaaa4" title="Stores the current device context state." alt="" coords="846,123,1009,149"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="738,97,840,117,839,122,737,102"/>
+<area shape="rect" id="Node000009" href="$class_d3_d11_render_hook.html#a6586b228d6010dbf55a9c9c8133fa348" title="Resizes the swap chain buffers." alt="" coords="555,123,774,149"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="482,133,539,133,539,139,482,139"/>
+</map>

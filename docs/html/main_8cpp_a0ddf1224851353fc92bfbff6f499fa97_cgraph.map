@@ -1,0 +1,23 @@
+<map id="main" name="main">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,55,108"/>
+<area shape="rect" id="Node000002" href="$class_imgui_handler.html#a8afabf8343cb9d4dc5ebb11c9dd31eb8" title="Initializes the ImGui handler." alt="" coords="103,81,254,108"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="55,92,88,92,88,97,55,97"/>
+<area shape="rect" id="Node000003" href="$_imgui_handler_8cpp.html#ae184460b32863da763541b7e59cfdae7" title=" " alt="" coords="302,5,433,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="212,78,301,42,316,36,318,41,303,46,214,83"/>
+<area shape="rect" id="Node000005" href="$_imgui_handler_8cpp.html#a9adec99bddda709d509857760a77a8fe" title=" " alt="" coords="307,56,429,83"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="254,82,291,77,292,82,255,87"/>
+<area shape="rect" id="Node000007" href="$class_imgui_draw.html#a4642b0bd2b507373f1c50073dd2b4462" title="Draws the Imgui interface." alt="" coords="310,157,426,184"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="214,106,303,143,318,149,316,154,301,148,212,111"/>
+<area shape="rect" id="Node000008" href="$_imgui_handler_8cpp.html#aa726a6316fd5b9e2520d1c71670ccc16" title=" " alt="" coords="330,107,405,133"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="255,102,315,110,314,116,254,107"/>
+<area shape="rect" id="Node000004" href="$_imgui_handler_8cpp.html#a158bd53beaca42a81f1154cdcbef96ef" title=" " alt="" coords="523,5,668,32"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="434,16,507,16,507,21,434,21"/>
+<area shape="rect" id="Node000006" href="$_imgui_handler_8cpp.html#ab9ce49cc3b65f418ffe44be5b6b40da6" title=" " alt="" coords="527,56,664,83"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="429,67,512,67,512,72,429,72"/>
+<area shape="poly" id="edge8_Node000008_Node000004" title=" " alt="" coords="405,106,432,92,446,80,455,67,464,54,480,42,507,30,509,35,483,46,468,58,459,70,450,83,435,97,407,111"/>
+<area shape="poly" id="edge9_Node000008_Node000006" title=" " alt="" coords="405,109,481,92,517,84,518,89,482,97,407,114"/>
+<area shape="rect" id="Node000009" href="$_imgui_handler_8cpp.html#a87a3f9652a75339308cf5fd5699ef1fd" title=" " alt="" coords="481,107,710,133"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="406,117,466,117,466,123,406,123"/>
+<area shape="rect" id="Node000010" href="$_imgui_handler_8cpp.html#a3f9e419496a8044a4194aa4f7a82ac67" title=" " alt="" coords="525,157,666,184"/>
+<area shape="poly" id="edge11_Node000008_Node000010" title=" " alt="" coords="407,126,482,143,518,151,517,156,481,148,405,131"/>
+</map>

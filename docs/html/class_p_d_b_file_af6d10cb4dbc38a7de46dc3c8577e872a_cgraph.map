@@ -1,0 +1,23 @@
+<map id="PDBFile::PDBFile" name="PDBFile::PDBFile">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,107,131,133"/>
+<area shape="rect" id="Node000002" href="$class_p_d_b_file.html#a19df74758cd302c43e132c29a1c59780" title=" " alt="" coords="187,5,356,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="84,104,125,73,177,42,193,35,195,40,180,46,128,77,87,108"/>
+<area shape="rect" id="Node000003" href="$class_p_d_b_file.html#a3313e861f1fe8dd061c06dbafbd68c7e" title=" " alt="" coords="194,56,349,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="124,103,200,84,201,90,125,109"/>
+<area shape="rect" id="Node000004" href="$class_p_d_b_file.html#ae2759e32d6508f836bf3c423b434b322" title=" " alt="" coords="179,107,364,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="131,117,163,117,163,123,131,123"/>
+<area shape="rect" id="Node000006" href="$class_p_d_b_file.html#a6faca78b252c56ba70351c4e21a19a0c" title=" " alt="" coords="195,157,348,184"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="125,131,201,150,200,156,124,137"/>
+<area shape="rect" id="Node000007" href="$class_p_d_b_file.html#ab785bf6537021ca7486bac52effdd251" title=" " alt="" coords="184,208,359,235"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="87,132,128,163,180,194,195,200,193,205,177,198,125,167,84,136"/>
+<area shape="rect" id="Node000005" href="$namespace_binder.html#a20559742665823b09d4d6f4c7bb0b69b" title="Converts a C&#45;style string to a wide string." alt="" coords="415,107,576,133"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="364,117,399,117,399,123,364,123"/>
+<area shape="rect" id="Node000008" href="$class_p_d_b_file.html#a0439a3d8cf88d45ed4de573d62c7c759" title=" " alt="" coords="412,208,579,235"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="359,219,396,219,396,224,359,224"/>
+<area shape="rect" id="Node000009" href="$namespace_binder.html#a9755f41c24bdc20cb55798afaad0b431" title="Converts a wide string to a C&#45;style string." alt="" coords="635,157,783,184"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="554,205,635,186,636,191,556,210"/>
+<area shape="rect" id="Node000010" href="$class_executable_file.html#a7beef211cbad01d824012df7e77e2b2b" title="Gets the hash of the executable." alt="" coords="627,208,791,235"/>
+<area shape="poly" id="edge9_Node000008_Node000010" title=" " alt="" coords="580,219,612,219,612,224,580,224"/>
+<area shape="rect" id="Node000011" href="$class_p_d_b_file.html#a257c550529369101e8c9633302503ca2" title=" " alt="" coords="642,259,776,285"/>
+<area shape="poly" id="edge10_Node000008_Node000011" title=" " alt="" coords="556,233,636,252,635,257,554,238"/>
+</map>

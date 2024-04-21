@@ -1,0 +1,10 @@
+<map id="Binder::save" name="Binder::save">
+<area shape="rect" id="Node000001" title="Saves the executable file with the bound watermark." alt="" coords="5,43,98,69"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="23,43,18,34,21,24,33,18,52,16,71,19,82,25,79,30,70,24,51,21,35,23,25,28,23,33,28,41"/>
+<area shape="rect" id="Node000002" href="$class_executable_file.html#af058ab5ef410698b51f8ee2dda5256b6" title="Saves the executable file to the specified path." alt="" coords="146,43,287,69"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="98,53,130,53,130,59,98,59"/>
+<area shape="rect" id="Node000003" href="$class_image_section.html#a137bc48015468e9885ac22da28fcf1d0" title="Gets the virtual address of the section." alt="" coords="352,5,515,48"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="287,44,336,37,336,42,288,49"/>
+<area shape="rect" id="Node000004" href="$class_executable_file.html#a4b4ace9846214597b70f2886b09a0049" title="Rewrites the import table in the executable with the new import data." alt="" coords="335,72,531,99"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="288,63,320,67,319,73,287,68"/>
+</map>

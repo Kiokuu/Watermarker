@@ -1,0 +1,11 @@
+<map id="D3D11RenderHook::RenderWatermarkStub" name="D3D11RenderHook::RenderWatermarkStub">
+<area shape="rect" id="Node000001" title="Stub function for rendering a watermark." alt="" coords="5,72,277,99"/>
+<area shape="rect" id="Node000002" href="$class_d3_d11_render_hook.html#a010af099fe00d9d7ef630d2b90bab25e" title="Renders a watermark on the swap chain." alt="" coords="325,72,569,99"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="277,83,309,83,309,88,277,88"/>
+<area shape="rect" id="Node000003" href="$class_d3_d11_render_hook.html#a5a467a9c2c4c73834ce70cec726042de" title="Initializes Direct3D 11 resources." alt="" coords="617,5,803,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="509,69,601,48,602,53,511,74"/>
+<area shape="rect" id="Node000004" href="$class_d3_d11_state_block.html#a870d21705df0d62c6a08b0cce2ef17df" title="Restores the device context state to the stored state." alt="" coords="622,72,799,99"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="569,83,606,83,606,88,569,88"/>
+<area shape="rect" id="Node000005" href="$class_d3_d11_state_block.html#a82a1561b3f2b0d32fd4e3d94c17eaaa4" title="Stores the current device context state." alt="" coords="629,123,792,149"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="521,97,623,117,622,122,520,102"/>
+</map>

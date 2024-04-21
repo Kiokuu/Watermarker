@@ -1,0 +1,5 @@
+<map id="D3D11RenderHook::ResizeBuffersStub" name="D3D11RenderHook::ResizeBuffersStub">
+<area shape="rect" id="Node000001" title="Stub function for resizing the swap chain buffers." alt="" coords="5,5,252,32"/>
+<area shape="rect" id="Node000002" href="$class_d3_d11_render_hook.html#a6586b228d6010dbf55a9c9c8133fa348" title="Resizes the swap chain buffers." alt="" coords="300,5,519,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="252,16,284,16,284,21,252,21"/>
+</map>

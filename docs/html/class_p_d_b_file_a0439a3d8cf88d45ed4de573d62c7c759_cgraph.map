@@ -1,0 +1,9 @@
+<map id="PDBFile::processSymbol" name="PDBFile::processSymbol">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,173,83"/>
+<area shape="rect" id="Node000002" href="$namespace_binder.html#a9755f41c24bdc20cb55798afaad0b431" title="Converts a wide string to a C&#45;style string." alt="" coords="228,5,377,32"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,53,228,34,229,39,149,58"/>
+<area shape="rect" id="Node000003" href="$class_executable_file.html#a7beef211cbad01d824012df7e77e2b2b" title="Gets the hash of the executable." alt="" coords="221,56,384,83"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,67,205,67,205,72,173,72"/>
+<area shape="rect" id="Node000004" href="$class_p_d_b_file.html#a257c550529369101e8c9633302503ca2" title=" " alt="" coords="235,107,370,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="149,81,229,100,228,105,148,86"/>
+</map>
