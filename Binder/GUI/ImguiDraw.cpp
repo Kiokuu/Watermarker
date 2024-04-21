@@ -1,4 +1,6 @@
 #include "ImguiDraw.h"
+
+#include <filesystem>
 #include <iostream>
 #include "imgui.h"
 #include "ImGuiFileDialog.h"
@@ -45,8 +47,12 @@ void ImguiDraw::draw()
 		std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 		std::cout << "Selected file: " << filePathName << std::endl;
 
+		std::filesystem::path filePath(filePathName);
+
+		const std::string absolute_fp = std::filesystem::absolute(filePath).string();
+
 		// Attempt to load and attach to the executable
-		if (!attemptBind(filePathName))
+		if (!attemptBind(absolute_fp))
 		{
 			setError("Failed to bind file");
 		}
