@@ -144,6 +144,7 @@ bool Binder::save(std::string_view name, std::string_view watermark)
 
 	// Check if watermark.dll is in the current directory (not the executable directory)
 	std::filesystem::path watermarkPath = std::filesystem::current_path() / "Watermark.dll";
+	std::filesystem::path targetWatermarkDLLPath = parentPath / "Watermark.dll";
 
 	if (!std::filesystem::exists(watermarkPath))
 	{
@@ -151,8 +152,13 @@ bool Binder::save(std::string_view name, std::string_view watermark)
 		return false;
 	}
 
-	// Copy the watermark.dll to the executable directory
-	std::filesystem::copy(watermarkPath, parentPath.string() + "\\" + "Watermark.dll", std::filesystem::copy_options::overwrite_existing);
+	// If the original and target paths are the same, do not copy the file
+	if(watermarkPath != targetWatermarkDLLPath)
+	{
+		std::filesystem::copy(watermarkPath, parentPath.string() + "\\" + "Watermark.dll", std::filesystem::copy_options::overwrite_existing);
+	}
+
+
 
 	// Free the executable from memory
 	delete m_executable;
