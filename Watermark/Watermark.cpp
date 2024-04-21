@@ -1,5 +1,4 @@
-﻿#include "Watermark.h"
-#include <iostream>
+﻿#include <iostream>
 #include <Windows.h>
 #include <d3d11.h>
 

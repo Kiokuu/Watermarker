@@ -134,7 +134,7 @@ void D3D11RenderHook::InitializeD3DResources()
 
 
 	// Save the image to a file (for debugging)
-	watermark.save_bmp("watermark.bmp");
+	//watermark.save_bmp("watermark.bmp");
 
 
 	// Create a texture2d descriptor
@@ -385,8 +385,13 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 	// Print the new width and height.
 	printf("Resizing buffers to %d x %d\n", Width, Height);
 
+	// If we are not initialized, call the original function
+	if(m_pSwapChain==nullptr || m_pDevice==nullptr)
+		return m_originalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+
 	// Release the render target view
-	m_pRenderTargetView->Release();
+	if(m_pRenderTargetView != nullptr)
+		m_pRenderTargetView->Release();
 
 	// Call the original resize buffers function to utilize the changes
 	HRESULT hr = m_originalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
@@ -414,7 +419,8 @@ HRESULT D3D11RenderHook::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCo
 	}
 
 	// Release the back buffer
-	pBackBuffer->Release();
+	if(pBackBuffer != nullptr)
+		pBackBuffer->Release();
 
 	// Get the swapchain descriptor for the new size
 	DXGI_SWAP_CHAIN_DESC desc;
