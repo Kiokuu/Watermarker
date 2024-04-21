@@ -36,7 +36,7 @@ add_executable (Binder "Binder.cpp" "Binder.h" "main.cpp" "ExecutableFile.h" "Ex
 
 
 target_include_directories(Binder PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include PUBLIC ${DIASDK_INCLUDE_DIRS} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/imgui ${CMAKE_CURRENT_LIST_DIR}/imgui/backends ${CMAKE_CURRENT_LIST_DIR}/imgui_filedialog)
-target_link_libraries(Binder PRIVATE zasm ${DIASDK_LIBRARIES} dbghelp)
+target_link_libraries(Binder PRIVATE zasm)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Binder PROPERTY CXX_STANDARD 20)
