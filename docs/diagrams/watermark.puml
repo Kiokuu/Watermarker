@@ -1,0 +1,82 @@
+@startuml
+package [Watermark] as C_0000173713323664995690 {
+class "D3D11StateBlock" as C_0000464304925567553711
+class C_0000464304925567553711 {
++D3D11StateBlock(ID3D11DeviceContext * pContext) : void
++~D3D11StateBlock() : void
+..
+-Release() : void
++Restore() : void
++Store() : void
+__
+-m_blendFactor : float[4]
+-m_blendSampleMask : UINT
+-m_pBlendState : ID3D11BlendState *
+-m_pContext : ID3D11DeviceContext *
+-m_pDepthStencilView : ID3D11DepthStencilView *
+-m_pGeometryShader : ID3D11GeometryShader *
+-m_pIndexBuffer : ID3D11Buffer *
+-m_pIndexBufferFormat : DXGI_FORMAT
+-m_pInputLayout : ID3D11InputLayout *
+-m_pOffsets : UINT[32]
+-m_pPixelShader : ID3D11PixelShader *
+-m_pPrimitiveTopology : D3D11_PRIMITIVE_TOPOLOGY
+-m_pRasterizerState : ID3D11RasterizerState *
+-m_pRenderTargetViews : ID3D11RenderTargetView *[8]
+-m_pSamplerStates : ID3D11SamplerState *[16]
+-m_pShaderResourceViews : ID3D11ShaderResourceView *[128]
+-m_pStrides : UINT[32]
+-m_pVertexBuffers : ID3D11Buffer *[32]
+-m_pVertexShader : ID3D11VertexShader *
+-m_pViewPorts : D3D11_VIEWPORT[15]
+-m_uiOffset : UINT
+}
+package [CImg] as C_0002244152923699224498 {
+}
+class "D3D11RenderHook" as C_0000454244906899965720
+class C_0000454244906899965720 {
++D3D11RenderHook(HWND hWnd, const char * watermark_data) : void
++~D3D11RenderHook() : void
+..
++CreateSwapChain() : void
++Hook() : void
++Initialize() : void
++InitializeD3DResources() : void
++RenderWatermark(IDXGISwapChain * pSwapChain, UINT SyncInterval, UINT Flags) : HRESULT
+{static} +RenderWatermarkStub(IDXGISwapChain * pSwapChain, UINT SyncInterval, UINT Flags) : HRESULT
++ResizeBuffers(IDXGISwapChain * pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) : HRESULT
+{static} +ResizeBuffersStub(IDXGISwapChain * pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) : HRESULT
+__
+-m_bHookInitialized : bool
+-m_hWnd : HWND
+-m_originalPresent : Present_t
+-m_originalResizeBuffers : ResizeBuffers_t
+-m_pBlendState : ID3D11BlendState *
+-m_pContext : ID3D11DeviceContext *
+-m_pDevice : ID3D11Device *
+-m_pIndexBuffer : ID3D11Buffer *
+-m_pInputLayout : ID3D11InputLayout *
+-m_pPixelShader : ID3D11PixelShader *
+-m_pRenderTargetView : ID3D11RenderTargetView *
+-m_pSamplerState : ID3D11SamplerState *
+-m_pShaderResourceView : ID3D11ShaderResourceView *
+-m_pSwapChain : IDXGISwapChain *
+-m_pTexture : ID3D11Texture2D *
+-m_pVertexBuffer : ID3D11Buffer *
+-m_pVertexShader : ID3D11VertexShader *
+-m_vp : D3D11_VIEWPORT
+-m_watermarkData : std::string
+}
+class "Vertex" as C_0000290782000873536760
+class C_0000290782000873536760 {
+__
++pos : DirectX::XMFLOAT2
++uv : DirectX::XMFLOAT2
+}
+}
+C_0000454244906899965720 --> C_0000464304925567553711 : -m_pStateBlock
+C_0000454244906899965720 --> C_0000454244906899965720 : -m_pInstance
+
+'Generated with clang-uml, version 0.5.1
+'LLVM version clang version 17.0.6 (https://github.com/llvm/llvm-project.git 6009708b4367171ccdbf4b5905cb6a803753fe18)
+@enduml

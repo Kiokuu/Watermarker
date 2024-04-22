@@ -1,0 +1,157 @@
+@startuml
+package [Binder] as C_0001543409696271585207 {
+class "ImageSection" as C_0001251755254607514250
+class C_0001251755254607514250 {
++ImageSection() = default : void
++ImageSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, const std::span<uint8_t> & data) : void
+..
++foToVa(uint32_t fo) const : uint32_t
++getCharacteristics() const : uint32_t
++getData() const : const std::span<uint8_t> &
++getName() const : std::string_view
++getRawAddress() const : uint32_t
++getRawSize() const : uint32_t
++getVirtualAddress() const : uint32_t
++getVirtualSize() const : uint32_t
++setCharacteristics(uint32_t characteristics) : void
++setData(const std::span<uint8_t> & data) : void
++setRawAddress(uint32_t rawAddress) : void
++setRawSize(uint32_t rawSize) : void
++setVirtualAddress(uint32_t virtualAddress) : void
++setVirtualSize(uint32_t virtualSize) : void
++vaToFo(uint32_t va) const : uint32_t
+__
+-m_characteristics : uint32_t
+-m_data : std::span<uint8_t>
+-m_name : std::string
+-m_rawAddress : uint32_t
+-m_rawSize : uint32_t
+-m_virtualAddress : uint32_t
+-m_virtualSize : uint32_t
+}
+class "ImportedFunction" as C_0001274077197191607529
+class C_0001274077197191607529 {
++ImportedFunction(std::string name, bool isOriginal) : void
++ImportedFunction(uint64_t ordinal, bool isOriginal) : void
+..
++getIsOrdinal() const : bool
++getName() const : std::string_view
++getOrdinal() const : uint64_t
++getOriginal() const : bool
++setOriginal(bool original) : void
+__
+-m_data : FunctionData
+-m_isOrdinal : bool
+-m_original : bool
+}
+class "ImportedModule" as C_0000152763962007406803
+class C_0000152763962007406803 {
++ImportedModule() = default : void
++ImportedModule(std::string_view name) : void
+..
++addFunction(std::string name, bool isOriginal = false) : void
++addFunction(uint64_t ordinal, bool isOriginal = false) : void
++getFunction(std::string_view name) : ImportedFunction *
++getFunctions() const : const std::vector<ImportedFunction> &
++getName() const : std::string_view
+__
+-m_name : std::string
+}
+class "ExportedModule" as C_0000286580762232816673
+class C_0000286580762232816673 {
+__
+}
+class "AddressPair" as C_0000036788025607328582
+class C_0000036788025607328582 {
+__
++rawAddress : uint32_t
++virtualAddress : uint32_t
+}
+class "ExecutableFile" as C_0001693128495713935769
+class C_0001693128495713935769 {
++ExecutableFile() = default : void
++ExecutableFile(std::string_view executablePath) : void
++ExecutableFile(std::string_view executablePath, std::string_view pdbPath) : void
++~ExecutableFile() = default : void
+..
+-_createSection(std::string_view name, uint32_t virtualAddress, uint32_t virtualSize, uint32_t rawAddress, uint32_t rawSize, uint32_t characteristics, ImageSection ** outSection) : bool
++addImport(std::string moduleName, std::string functionName) : void
++createSection(std::string_view name, uint32_t virtualSize, uint32_t characteristics, ImageSection ** outSection) : bool
++getData() const : const std::vector<uint8_t> &
++getEntryPoint() const : uint32_t
++getFirstSectionAddress() const : AddressPair
++getHash() const : uint64_t
++getImageBase() const : uint64_t
++getImportAddress(std::string_view moduleName, std::string_view functionName) : uint32_t
++getImports() const : const std::vector<ImportedModule> &
+-getNextAddress() const : AddressPair
++getSection(std::string_view name) : const ImageSection *
++getSection(uint32_t virtualAddress) : const ImageSection *
++getSections() const : const std::vector<ImageSection> &
+-parse() : void
+-parseDosHeader() : void
+-parseExports() : void
+-parseImports() : void
+-parseNtHeaders() : void
+-parseSections() : void
++rewriteImports() : void
++save(std::string_view savePath) : void
++setEntryPoint(uint32_t entryPoint) : void
+__
+-m_addressMap : std::unordered_map<std::string,uintptr_t>
+-m_data : std::vector<uint8_t>
+-m_dosHeader : IMAGE_DOS_HEADER
+-m_newImportData : std::vector<uint8_t>
+-m_ntHeaders : IMAGE_NT_HEADERS
+-m_rewriteImportsOnSave : bool
+-m_trampolineData : std::vector<uint8_t>
+}
+class "Binder" as C_0001543409696271585207
+class C_0001543409696271585207 {
++Binder() : void
+..
++bind(std::string_view path) : bool
++isReadyToBind() const : bool
+-loadExecutable() : bool
++save(std::string_view name, std::string_view watermark) : bool
+-writeAssembly(std::string_view watermark) : bool
+__
+-m_assembler : zasm::x86::Assembler
+-m_executablePath : std::string
+-m_program : zasm::Program
+-m_serializer : zasm::Serializer
+}
+package [GUI] as C_0001541559385717047937 {
+class "ImguiDraw" as C_0000188741881377850985
+class C_0000188741881377850985 {
++ImguiDraw() : void
+..
+-attemptBind(const std::string & path) : bool
+-displayErrorPopup() : void
+-displaySuccessPopup() : void
++draw() : void
+-embedWatermark(const std::string & watermarkText) : void
+-setError(const std::string & msg) : void
+-setSuccess(const std::string & msg) : void
+__
+-m_errorMsg : std::string
+-m_successMsg : std::string
+}
+class "ImguiHandler" as C_0002195629764272122245
+class C_0002195629764272122245 {
++initialize() : int
+__
+}
+}
+}
+C_0000152763962007406803 o-- C_0001274077197191607529 : -m_functions
+C_0001693128495713935769 ..> C_0000036788025607328582
+C_0001693128495713935769 o-- C_0001251755254607514250 : -m_sections
+C_0001693128495713935769 o-- C_0000152763962007406803 : -m_imports
+C_0001693128495713935769 o-- C_0000286580762232816673 : -m_exports
+C_0001543409696271585207 --> C_0001693128495713935769 : -m_executable
+C_0000188741881377850985 --> C_0001543409696271585207 : -m_binder
+
+'Generated with clang-uml, version 0.5.1
+'LLVM version clang version 17.0.6 (https://github.com/llvm/llvm-project.git 6009708b4367171ccdbf4b5905cb6a803753fe18)
+@enduml
