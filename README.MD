@@ -7,7 +7,7 @@ Final-year bachelor's thesis project (2024). Built to explore PE format manipula
 ---
 
 ## Example (Before&After)
-[Example](/BeforeAfter.png)
+![Example](https://github.com/Kiokuu/Watermarker/blob/master/BeforeAfter.png?raw=true)
 
 ## How it works
 
