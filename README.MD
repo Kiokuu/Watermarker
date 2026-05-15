@@ -6,6 +6,9 @@ Final-year bachelor's thesis project (2024). Built to explore PE format manipula
 
 ---
 
+## Example (Before&After)
+[Example](/BeforeAfter.png)
+
 ## How it works
 
 The project is split into two components that work together:
